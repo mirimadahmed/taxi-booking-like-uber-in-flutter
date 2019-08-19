@@ -35,12 +35,12 @@ class AuthModel {
         print('start');
         print(user);
         print('start');
-        print(user.isEmailVerified);
-        if (!user.isEmailVerified) {
-          user.sendEmailVerification();
+        print(user.user.isEmailVerified);
+        if (!user.user.isEmailVerified) {
+          user.user.sendEmailVerification();
           successful = true;
           prefs.setString('email', email);
-          prefs.setString('id', user.uid);
+          prefs.setString('id', user.user.uid);
         }
       }).catchError((onError) {
         print("error $onError");
@@ -65,12 +65,12 @@ class AuthModel {
     await _auth
         .signInWithEmailAndPassword(email: email, password: password)
         .then((user) {
-      if (user.isEmailVerified) {
+      if (user.user.isEmailVerified) {
         print(user);
         successful = true;
-        userId = user.uid;
+        userId = user.user.uid;
         prefs.setString("email", email);
-        prefs.setString('id', user.uid);
+        prefs.setString('id', user.user.uid);
       } else {
         print('failed');
         message = 'Kindly, activate using your email';
@@ -113,9 +113,7 @@ class AuthModel {
     };
   }
 
-
-
-  Future registerInfo({userName,  phone,  location,gender,city}) async {
+  Future registerInfo({userName, phone, location, gender, city}) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     String userId = prefs.getString('id');
     String email = prefs.getString("email");
@@ -131,22 +129,22 @@ class AuthModel {
 
         if (userName != null || userName.length != 0) {
           ref.document(userId).setData({
-            "city":city,
+            "city": city,
             "created_At": DateTime.now().toString(),
             "id": userId,
             "username": userName,
             "photoUrl":
-            "https://img.icons8.com/bubbles/2x/administrator-male.png",
+                "https://img.icons8.com/bubbles/2x/administrator-male.png",
             "email": email,
             "gender": gender,
             "location": location,
             "phone": phone,
             "dob": "",
             "rides": {},
-            "currentLocation":{"lat": 51.1657, "long": 10.4515},
-            "balance":0.0,
-            "active":true,
-            "rating":5.0
+            "currentLocation": {"lat": 51.1657, "long": 10.4515},
+            "balance": 0.0,
+            "active": true,
+            "rating": 5.0
           });
         }
         userRecord = await ref.document(userId).get();
@@ -155,8 +153,6 @@ class AuthModel {
       } else {
         message = "User already registered.";
       }
-
-
     } catch (e) {
       print(e);
     }
