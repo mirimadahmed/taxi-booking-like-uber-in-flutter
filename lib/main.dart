@@ -9,6 +9,7 @@ import 'package:moover/pages/profile1.dart';
 import 'package:moover/pages/profile2.dart';
 import 'package:moover/pages/profile3.dart';
 import 'package:moover/pages/standardscreen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import './pages/Guthaben.dart';
 import './pages/dashboard.dart';
 import 'package:moover/pages/auth/login.dart';
@@ -26,13 +27,14 @@ import './pages/contactDriver.dart';
 import './pages/rate.dart';
 import './pages/auth/register.dart';
 import './models/userModel.dart';
+import 'pages/get_reset_link.dart';
 
 void main() {
-  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
-      .then((_) {
-    debugPaintSizeEnabled = false;
-    runApp(MyApp());
-  });
+//  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
+//      .then((_) {
+//    debugPaintSizeEnabled = false;
+//  });
+  runApp(MyApp());
 }
 User currentUserModel = new User();
 
@@ -45,9 +47,20 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  String id;
   @override
   void initState() {
     super.initState();
+    _getUserUID().then((res){
+      setState(() {
+        id = res;
+      });
+      print(res);
+    });
+  }
+  _getUserUID()async{
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString("id");
   }
 
   @override
@@ -85,7 +98,8 @@ class _MyAppState extends State<MyApp> {
     }));
     router.define('/', handler: Handler(
         handlerFunc: (BuildContext context, Map<String, dynamic> params) {
-      return Login();
+//      return Login();
+      return id != null ? StandardScreenPage() : Login();
     }));
     router.define('/register', handler: Handler(
         handlerFunc: (BuildContext context, Map<String, dynamic> params) {
@@ -150,6 +164,10 @@ class _MyAppState extends State<MyApp> {
         handlerFunc: (BuildContext context, Map<String, dynamic> params) {
       return PaymentsPage();
     }));
+    router.define('/forget-password', handler: Handler(
+        handlerFunc: (BuildContext context, Map<String, dynamic> params) {
+          return GetResetLink();
+        }));
 
     return MaterialApp(
         debugShowCheckedModeBanner: false,

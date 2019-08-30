@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -6,13 +8,12 @@ import '../widgets/network.dart';
 import '../widgets/route.dart';
 import 'package:location/location.dart' as loc;
 import 'package:flutter/services.dart';
-//import 'package:simple_permissions/simple_permissions.dart';
 import '../main.dart';
 import '../models/authModel.dart';
 import 'package:google_maps_webservice/places.dart';
 import 'package:flutter_google_places/flutter_google_places.dart';
 import '../widgets/drawer.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 class StandardScreenPage extends StatefulWidget {
   @override
   State<StatefulWidget> createState() {
@@ -32,9 +33,10 @@ class StandardScreenPageState extends State<StandardScreenPage> {
   String loacationAddress = "Loading...";
   GoogleMapController mapController;
   Map<MarkerId, Marker> markers = <MarkerId, Marker>{};
+  String username = "";
 
-  getUserLocation() async {
-    //call this async method from whereever you need
+    getUserLocation() async {
+    //call this async method from wherever you need
 
     loc.LocationData currentLocation;
     var myLocation;
@@ -57,13 +59,17 @@ class StandardScreenPageState extends State<StandardScreenPage> {
 
 
     print("raxi");
-
-
-
+    print(currentLocation.latitude);
+    print(currentLocation.longitude);
     return currentLocation;
+
   }
 
+  _getUserData()async{
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString("user");
 
+  }
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
@@ -97,6 +103,15 @@ class StandardScreenPageState extends State<StandardScreenPage> {
   @override
   void initState() {
     super.initState();
+    getUserLocation();
+    _getUserData().then((data){
+      print("user data");
+      var dta = jsonDecode(data);
+      setState(() {
+        username = dta["username"];
+      });
+      print(dta["username"]);
+    });
   }
 
   @override
@@ -124,9 +139,7 @@ class StandardScreenPageState extends State<StandardScreenPage> {
                   child: GoogleMap(
                     mapType: MapType.normal,
                     initialCameraPosition: _kGooglePlex,
-                    onMapCreated: (GoogleMapController controller) {
-                      _controller.complete(controller);
-                    },
+                    onMapCreated: _onMapCreated,
                   )),
               Container(
                 height: 50.0,
@@ -173,7 +186,7 @@ class StandardScreenPageState extends State<StandardScreenPage> {
                           height: 10,
                         ),
                         Text(
-                          "Hallo Mikey!",
+                          "Hello "+username+"!",
                           style: TextStyle(color: Colors.white),
                         ),
                         Text(
@@ -217,7 +230,7 @@ class StandardScreenPageState extends State<StandardScreenPage> {
                                   )
                                 ],
                               ),
-                              onTap: () => Navigator.pushReplacementNamed(
+                              onTap: () => Navigator.pushNamed(
                                   context, "/search"),
                             ),
                             GestureDetector(
@@ -253,7 +266,7 @@ class StandardScreenPageState extends State<StandardScreenPage> {
                                   )
                                 ],
                               ),
-                              onTap: () => Navigator.pushReplacementNamed(
+                              onTap: () => Navigator.pushNamed(
                                   context, "/search"),
                             ),
                           ],

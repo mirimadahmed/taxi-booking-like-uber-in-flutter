@@ -26,6 +26,7 @@ dependencies:
   location:
   flutter_google_places:
   shared_preferences: 0.4.3
+  geolocator:
   http:
   cloud_firestore:
 

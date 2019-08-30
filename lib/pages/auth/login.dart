@@ -197,7 +197,7 @@ class _Login extends State<Login> {
         ),
         onTap: () {
           setState(() {
-//            Navigator.pushReplacementNamed(context, '/forget-password');
+            Navigator.pushReplacementNamed(context, '/forget-password');
           });
         });
   }
@@ -220,68 +220,71 @@ class _Login extends State<Login> {
 
 
     return Scaffold(
-      resizeToAvoidBottomPadding: false,
+//      resizeToAvoidBottomPadding: false,
+    backgroundColor: Color(0xfff40e878),
       key: _scaffoldKey,
-      body: Container(
-        color: Color(0xfff40e878),
+      body: SingleChildScrollView(
         child: Container(
-          padding: EdgeInsets.only(left: 30, right: 30),
-          child: Form(
-              key: _loginForm,
-              child: Column(
-            children: <Widget>[
-              Container(
-                height: 120,
-                width: 120,
-                child: Image(image: AssetImage('assets/car-white.png')),
-                margin: EdgeInsets.only(top: 150),
-              ),
-              SizedBox(
-                height: 20,
-              ),
-              _buildEmailTextField(),
-              SizedBox(
-                height: 25,
-              ),
-              _buildPasswordTextField(),
-              SizedBox(
-                height: 25,
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: <Widget>[
-                  _progress
-                      ? Center(child: new CircularProgressIndicator())
-                      : _buildLoginBtn(),
+          color: Color(0xfff40e878),
+          child: Container(
+            padding: EdgeInsets.only(left: 30, right: 30),
+            child: Form(
+                key: _loginForm,
+                child: Column(
+              children: <Widget>[
+                Container(
+                  height: 120,
+                  width: 120,
+                  child: Image(image: AssetImage('assets/car-white.png')),
+                  margin: EdgeInsets.only(top: 150),
+                ),
+                SizedBox(
+                  height: 20,
+                ),
+                _buildEmailTextField(),
+                SizedBox(
+                  height: 25,
+                ),
+                _buildPasswordTextField(),
+                SizedBox(
+                  height: 25,
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    _progress
+                        ? Center(child: new CircularProgressIndicator())
+                        : _buildLoginBtn(),
 
-                  Text(
-                    'Forget Password?',
-                    style: TextStyle(fontSize: 18.0, fontFamily: 'SFUID-Medium', fontWeight: FontWeight.w500, color: Colors.black, height: 2.0),
-                    textAlign: TextAlign.right,
-                  ),
+                    Text(
+                      'Forget Password?',
+                      style: TextStyle(fontSize: 18.0, fontFamily: 'SFUID-Medium', fontWeight: FontWeight.w500, color: Colors.black, height: 2.0),
+                      textAlign: TextAlign.right,
+                    ),
 
-                  _buildforgetPasswordInkWell()
-                ],
-              ),
-              SizedBox(
-                height: 15,
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: <Widget>[
+                    _buildforgetPasswordInkWell()
+                  ],
+                ),
+                SizedBox(
+                  height: 15,
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: <Widget>[
 
-                  Text(
-                    'Don\'t have an account?',
-                    style: TextStyle(fontSize: 18.0, fontFamily: 'SFUID-Medium', color: Colors.black, height: 2.0),
-                    textAlign: TextAlign.right,
-                  ),
+                    Text(
+                      'Don\'t have an account?',
+                      style: TextStyle(fontSize: 18.0, fontFamily: 'SFUID-Medium', color: Colors.black, height: 2.0),
+                      textAlign: TextAlign.right,
+                    ),
 
-                  _buildcreateAccountInkWell()
-                ],
-              )
-            ],
-          )),
+                    _buildcreateAccountInkWell()
+                  ],
+                )
+              ],
+            )),
+          ),
         ),
       ),
     );

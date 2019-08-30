@@ -3,6 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:location/location.dart' as LocationPlugin;
+import 'package:geolocator/geolocator.dart';
+import 'package:flutter/services.dart';
 import 'dart:convert';
 import '../main.dart';
 
@@ -113,7 +116,12 @@ class AuthModel {
     };
   }
 
-  Future registerInfo({userName, phone, location, gender, city}) async {
+
+  Future registerInfo({userName, phone, location, gender, lat, lng}) async {
+
+
+
+
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     String userId = prefs.getString('id');
     String email = prefs.getString("email");
@@ -122,6 +130,7 @@ class AuthModel {
     bool successful = false;
 
 //    if (check) {
+
     try {
       DocumentSnapshot userRecord = await ref.document(userId).get();
       if (userRecord.data == null) {
@@ -129,7 +138,6 @@ class AuthModel {
 
         if (userName != null || userName.length != 0) {
           ref.document(userId).setData({
-            "city": city,
             "created_At": DateTime.now().toString(),
             "id": userId,
             "username": userName,
@@ -141,7 +149,7 @@ class AuthModel {
             "phone": phone,
             "dob": "",
             "rides": {},
-            "currentLocation": {"lat": 51.1657, "long": 10.4515},
+            "currentLocation": {"lat": lat, "long": lng},
             "balance": 0.0,
             "active": true,
             "rating": 5.0
@@ -161,4 +169,8 @@ class AuthModel {
 //    }
     return {'success': successful, 'message': message};
   }
+
+
+
+
 }

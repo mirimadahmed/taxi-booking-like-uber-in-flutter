@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:country_code_picker/country_code_picker.dart';
 import '../../models/authModel.dart';
-
+import 'package:location/location.dart' as LocationPlugin;
+import 'package:flutter/services.dart';
 // This app is a stateful, it tracks the user's current choice.
 class Register extends StatefulWidget {
   @override
@@ -13,18 +14,55 @@ class _RegisterState extends State<Register>
   final _formKey = GlobalKey<FormState>();
   bool _progress = false;
   CountryCode _selected =CountryCode(
-      name: "Pakistan", code: "PK", dialCode: "+92");
+      name: "Deutschland", code: "DE", dialCode: "+49");
   String _gender, _name, _num,city;
 
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
 
 
+  String lat = "",lng = "";
   @override
   void initState() {
     super.initState();
+    getUserLocation().then((currentLocation){
+      setState(() {
+        lat = currentLocation.latitude.toString();
+        lng = currentLocation.longitude.toString();
+      });
+      print(lat);
+      print(lng);
+    });
+
   }
 
+  getUserLocation() async {
+    //call this async method from wherever you need
 
+    LocationPlugin.LocationData currentLocation;
+    var myLocation;
+    String error;
+    LocationPlugin.Location location = new LocationPlugin.Location();
+    try {
+      myLocation = await location.getLocation();
+    } on PlatformException catch (e) {
+      if (e.code == 'PERMISSION_DENIED') {
+        error = 'please grant permission';
+        print(error);
+      }
+      if (e.code == 'PERMISSION_DENIED_NEVER_ASK') {
+        error = 'permission denied- please enable it from app settings';
+        print(error);
+      }
+      myLocation = null;
+    }
+    currentLocation = myLocation;
+
+
+    print("raxi");
+
+    return currentLocation;
+
+  }
   void _showSnackBar(message) {
     _scaffoldKey.currentState.showSnackBar(SnackBar(
       backgroundColor: Colors.black,
@@ -166,9 +204,11 @@ class _RegisterState extends State<Register>
                             CountryCodePicker(
                               onChanged: (val) {
                                 _selected = val;
+                                print(val.name.toString());
+                                print(val.code.toString());
                               },
                               // Initial selection and favorite can be one of code ('IT') OR dial_code('+39')
-                              initialSelection: 'PK',
+                              initialSelection: "DE",
                               favorite: ['+39', 'FR'],
                               // optional. Shows only country name and flag
                               showCountryOnly: false,
@@ -217,7 +257,7 @@ class _RegisterState extends State<Register>
                         userGender(),SizedBox(
                           height: 20,
                         ),
-                        userCity(),
+//                        userCity(),
                         SizedBox(
                           height: 50,
                         ),
@@ -242,8 +282,10 @@ class _RegisterState extends State<Register>
                                                 _selected.toCountryStringOnly(),
                                             gender: _gender,
                                             userName: _name,
-                                        city:city,
-                                            phone: _selected.dialCode + _num)
+                                            phone: _selected.dialCode + _num,
+                                    lat: lat,
+                                      lng: lng
+                                    )
                                         .then((res) {
                                       setState(() {
                                         _progress = false;

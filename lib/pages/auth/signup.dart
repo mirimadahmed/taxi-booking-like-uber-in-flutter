@@ -150,6 +150,7 @@ class _Login extends State<SignUp> {
                 color: Colors.black45),
           ),
           onPressed: () {
+            FocusScope.of(context).requestFocus(new FocusNode());
             if (!_loginForm.currentState.validate()) {
               return;
             }
@@ -201,72 +202,77 @@ class _Login extends State<SignUp> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomPadding: false,
+//      resizeToAvoidBottomPadding: false,
       key: _scaffoldKey,
-      body: Container(
-        color: Color(0xfff40e878),
+      backgroundColor: Color(0xfff40e878),
+      body: SingleChildScrollView(
         child: Container(
-          padding: EdgeInsets.only(left: 30, right: 30),
+          color: Color(0xfff40e878),
+          child: Container(
+            padding: EdgeInsets.only(left: 30, right: 30),
 
-          child: Form(
-            key: _loginForm,
-            child: ListView(
-            children: <Widget>[
-              Container(
-                height: 120,
-                width: 120,
-                child: Image(image: AssetImage('assets/car-white.png')),
-                margin: EdgeInsets.only(top: 100),
-              ),
-              SizedBox(
-                height: 20,
-              ),
-              _buildEmailTextField(),
-              SizedBox(
-                height: 25,
-              ),
-              _buildPasswordTextField(),
-              SizedBox(
-                height: 25,
-              ),
-              _buildConfirmPasswordTextField(),
-              SizedBox(
-                height: 25,
-              ),
-              Row(
+            child: Form(
+              key: _loginForm,
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  _progress
-                      ? Center(child: new CircularProgressIndicator())
-                      :_buildLoginBtn(),
-                ],
-              ),
-              SizedBox(
-                height: 15,
-              ),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: <Widget>[
-                  SizedBox(
-                    width: 20,
-                  ),
-                  Text(
-                    'Already have an account?',
-                    style: TextStyle(
-                        fontSize: 18.0,
-                        fontFamily: 'SFUID-Medium',
-                        color: Colors.black,
-                        height: 2.0),
-                    textAlign: TextAlign.right,
-                  ),
-                  SizedBox(
-                    width: 10,
-                  ),
-                  _buildcreateAccountInkWell()
-                ],
-              )
-            ],
-          ),),
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                Container(
+                  height: 120,
+                  width: 120,
+                  child: Image(image: AssetImage('assets/car-white.png')),
+                  margin: EdgeInsets.only(top: 100),
+                ),
+                SizedBox(
+                  height: 20,
+                ),
+                _buildEmailTextField(),
+                SizedBox(
+                  height: 25,
+                ),
+                _buildPasswordTextField(),
+                SizedBox(
+                  height: 25,
+                ),
+                _buildConfirmPasswordTextField(),
+                SizedBox(
+                  height: 25,
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    _progress
+                        ? Center(child: new CircularProgressIndicator())
+                        :_buildLoginBtn(),
+                  ],
+                ),
+                SizedBox(
+                  height: 15,
+                ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: <Widget>[
+                    SizedBox(
+                      width: 20,
+                    ),
+                    Text(
+                      'Already have an account?',
+                      style: TextStyle(
+                          fontSize: 18.0,
+                          fontFamily: 'SFUID-Medium',
+                          color: Colors.black,
+                          height: 2.0),
+                      textAlign: TextAlign.right,
+                    ),
+                    SizedBox(
+                      width: 10,
+                    ),
+                    _buildcreateAccountInkWell()
+                  ],
+                )
+              ],
+            ),),
+          ),
         ),
       ),
     );

@@ -41,9 +41,10 @@ class SearchPageState extends State<SearchPage> {
   String loacationAddress = "Loading...";
   Map<MarkerId, Marker> markers = <MarkerId, Marker>{};
   Mode _mode = Mode.overlay;
+  double zoom = 14.4647;
   static final CameraPosition _kGooglePlex = CameraPosition(
     target: LatLng(37.42796133580664, -122.085749655962),
-    zoom: 14.4746,
+    zoom:14.4746,
   );
 
 
@@ -59,7 +60,7 @@ class SearchPageState extends State<SearchPage> {
         destLat.toString() +
         "," +
         destLng.toString() +
-        "&mode=walking&key=AIzaSyB81xMeMewP3-P3KyUloVMJnvVEhgfHgrI")
+        "&mode=walking&key=$kGoogleApiKey")
         .then((dynamic res) {
       print(res);
       List<Steps> rr = res["steps"];
@@ -70,11 +71,13 @@ class SearchPageState extends State<SearchPage> {
 //                i.startLocation.latitude, i.startLocation.longitude));
 //            ccc.add(map.Location(
 //                i.endLocation.latitude, i.endLocation.longitude));
+        print("i.polyline");
         print(i.polyline);
         decodePoly(i.polyline);
       }
 //
     });
+
 
     setState(() {
         polylines[PolylineId("poly1")] = Polyline(polylineId: PolylineId("poly1"),points: ccc);
@@ -85,6 +88,7 @@ class SearchPageState extends State<SearchPage> {
 
   void decodePoly(String encoded) {
     int index = 0, len = encoded.length;
+    print("len : $len");
     int lat = 0, lng = 0;
 
     while (index < len) {
@@ -92,13 +96,16 @@ class SearchPageState extends State<SearchPage> {
 
       do {
         var asc = encoded.codeUnitAt(index++);
-
+        print("asc L $asc");
         b = asc - 63;
-
+        print("b1:$b");
         result |= (b & 0x1f) << shift;
+        print("result: $result");
         shift += 5;
+        print("shift: $shift");
       } while (b >= 0x20);
       int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      print("dlat1: $dlat");
       lat += dlat;
       print("lat=${lat / 100000.0}");
 
@@ -106,13 +113,18 @@ class SearchPageState extends State<SearchPage> {
       result = 0;
       do {
         var asc = encoded.codeUnitAt(index++);
+        print("ascasc: $asc");
         b = asc - 63;
+        print("bbb: $b");
         result |= (b & 0x1f) << shift;
+        print("result2: $result");
         shift += 5;
+        print("shift: $shift");
       } while (b >= 0x20);
       int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      print("dlng2:$dlng");
       lng += dlng;
-
+      print("lng2: $lng");
       ccc.add(LatLng(lat / 100000.0, lng / 100000.0));
     }
   }
@@ -137,39 +149,66 @@ class SearchPageState extends State<SearchPage> {
       }
       myLocation = null;
     }
-    currentLocation = myLocation;
+    return myLocation;
+//    currentLocation = myLocation;
+//
+//
+//    print("raxi");
+//    return currentLocation;
 
-
-    print("raxi");
-
-
-
-    setState(() {
-      mapController.moveCamera(
-        CameraUpdate.newLatLng(
-          LatLng(currentLocation.latitude, currentLocation.longitude),
-        ),
-      );
-      markers[MarkerId("345")] = Marker(
-        markerId: MarkerId("345"),
-        draggable: true,
-        position: LatLng(currentLocation.latitude, currentLocation.longitude),
-        icon: BitmapDescriptor.defaultMarkerWithHue(
-          BitmapDescriptor.hueOrange,
-        ),
-        infoWindow:
-        InfoWindow(title: "Your Location", snippet: 'Pickup'),
-        onTap: () => _onMarkerTapped(
-          MarkerId("345"),
-        ),
-      );
-    });
+//    setState(() {
+//      mapController.moveCamera(
+//        CameraUpdate.newLatLng(
+//          LatLng(currentLocation.latitude, currentLocation.longitude),
+//        ),
+//      );
+//      markers[MarkerId("345")] = Marker(
+//        markerId: MarkerId("345"),
+//        draggable: true,
+//        position: LatLng(currentLocation.latitude, currentLocation.longitude),
+//        icon: BitmapDescriptor.defaultMarkerWithHue(
+//          BitmapDescriptor.hueOrange,
+//        ),
+//        infoWindow:
+//        InfoWindow(title: "Your Location", snippet: 'Pickup'),
+//        onTap: () => _onMarkerTapped(
+//          MarkerId("345"),
+//        ),
+//      );
+//    });
   }
 
   @override
   void initState() {
     super.initState();
-    getUserLocation();
+    getUserLocation().then((currentLocations){
+      print("current location");
+      print(currentLocations.latitude);
+      setState(() {
+        currentLocation = currentLocations;
+      });
+      setState(() {
+        currentLocation = currentLocations;
+        mapController.moveCamera(
+          CameraUpdate.newLatLng(
+            LatLng(currentLocations.latitude, currentLocations.longitude),
+          ),
+        );
+        markers[MarkerId("345")] = Marker(
+          markerId: MarkerId("345"),
+          draggable: true,
+          position: LatLng(currentLocations.latitude, currentLocations.longitude),
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueOrange,
+          ),
+          infoWindow:
+          InfoWindow(title: "Your Location", snippet: 'Pickup'),
+          onTap: () => _onMarkerTapped(
+            MarkerId("345"),
+          ),
+        );
+      });
+    });
   }
 
   @override
@@ -221,18 +260,31 @@ super.dispose();
                     polylines: Set<Polyline>.of(polylines.values),
                     myLocationButtonEnabled: true,
                     mapType: MapType.normal,
-                    initialCameraPosition: _kGooglePlex,
+                    initialCameraPosition: CameraPosition(
+                      target: LatLng(37.42796133580664, -122.085749655962),
+                      zoom:zoom,
+                    ),
                     markers: Set<Marker>.of(markers.values),
                     onMapCreated: (GoogleMapController controller) {
                       mapController=controller;
                     },
-                  )),
+                  ),
+              ),
               Positioned(
-                top: 40,
+                top: MediaQuery.of(context).size.height * .1,
                 left: 20,
                 right: 20,
                 child: GestureDetector(
                     onTap: () async {
+                      print("onTap");
+                      setState(() {
+                        ccc = [];
+                        polylines ={};
+                        markers[MarkerId("123")] = Marker(
+                          markerId: MarkerId("123"),
+                          visible: false,
+                        );
+                      });
                       // show input autocomplete with selected mode
                       // then get the Prediction selected
                       Prediction p = await PlacesAutocomplete.show(
@@ -256,6 +308,7 @@ super.dispose();
                         print(v["address"]);
 
                         setState(() {
+
                           loacationAddress = v["address"];
                           destination = LatLng(v["latitude"], v["longitude"]);
                           mapController.moveCamera(
@@ -277,10 +330,11 @@ super.dispose();
                             ),
                           );
                         });
+                        print("Hauptbahnhof");
                         print(currentLocation.latitude);
                         print(currentLocation.longitude);
                         print(v["latitude"]);
-                        getPolyline(31.440807, 74.293950, v["latitude"], v["longitude"]);
+                        getPolyline(currentLocation.latitude, currentLocation.longitude, v["latitude"], v["longitude"]);
                       });
                     },
                     child: Container(
@@ -304,15 +358,13 @@ super.dispose();
                       ),
                     )),
               ),
-            destination==null? Container():  Positioned(
+            destination==null? Container():
+            Positioned(
                   bottom: 15,
 //                  left: 15,
 //                  right: 15,
 
                   child: Container(
-
-
-
 //                    height: 30,
                   width: MediaQuery.of(context).size.width,
                     child: Row(
