@@ -187,7 +187,7 @@ class ChooseTransportPageState extends State<ChooseTransportPage> {
                                 shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10)),
                                 onPressed: () {},
-                                child: Text(
+                                    child: Text(
                                   "Notiz",
                                   style: TextStyle(
                                     color: Color.fromRGBO(64, 236, 120, 1.0),

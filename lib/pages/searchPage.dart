@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:moover/widgets/drawer.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import '../widgets/network.dart';
 import '../widgets/route.dart';
@@ -35,6 +38,7 @@ class SearchPageState extends State<SearchPage> {
   MarkerId selectedMarker;
   loc.LocationData currentLocation;
   LatLng destination;
+  LatLng pLocation;
   bool point = false;
   Map<PolylineId, Polyline> polylines = <PolylineId, Polyline>{};
   NetworkUtil network = new NetworkUtil();
@@ -47,10 +51,17 @@ class SearchPageState extends State<SearchPage> {
     zoom:14.4746,
   );
 
+  Map picupLocation = Map();
 
   Future getPolyline(originLat,originLng,destLat,destLng) async {
-
-
+//    setState(() {
+//      ccc = [];
+//      polylines ={};
+//      markers[MarkerId("123")] = Marker(
+//        markerId: MarkerId("123"),
+//        visible: false,
+//      );
+//    });
     await network
         .get("origin=" +
         originLat.toString() +
@@ -77,8 +88,6 @@ class SearchPageState extends State<SearchPage> {
       }
 //
     });
-
-
     setState(() {
         polylines[PolylineId("poly1")] = Polyline(polylineId: PolylineId("poly1"),points: ccc);
       });
@@ -130,13 +139,12 @@ class SearchPageState extends State<SearchPage> {
   }
 
   getUserLocation() async {
-    //call this async method from whereever you need
-
-
     var myLocation;
     String error;
     loc.Location location = new loc.Location();
+
     try {
+      print("getting location....");
       myLocation = await location.getLocation();
     } on PlatformException catch (e) {
       if (e.code == 'PERMISSION_DENIED') {
@@ -149,6 +157,7 @@ class SearchPageState extends State<SearchPage> {
       }
       myLocation = null;
     }
+    print("Location of my : ${myLocation}");
     return myLocation;
 //    currentLocation = myLocation;
 //
@@ -181,23 +190,22 @@ class SearchPageState extends State<SearchPage> {
   @override
   void initState() {
     super.initState();
-    getUserLocation().then((currentLocations){
-      print("current location");
-      print(currentLocations.latitude);
+
+    getPicupLatLng().then((res){
+      var decode = jsonDecode(res);
       setState(() {
-        currentLocation = currentLocations;
+        pLocation = LatLng(decode["lat"], decode["lng"]);
       });
       setState(() {
-        currentLocation = currentLocations;
         mapController.moveCamera(
           CameraUpdate.newLatLng(
-            LatLng(currentLocations.latitude, currentLocations.longitude),
-          ),
-        );
+            LatLng(decode["lat"], decode["lng"]),
+            ),
+          );
         markers[MarkerId("345")] = Marker(
           markerId: MarkerId("345"),
           draggable: true,
-          position: LatLng(currentLocations.latitude, currentLocations.longitude),
+          position: LatLng(decode["lat"], decode["lng"]),
           icon: BitmapDescriptor.defaultMarkerWithHue(
             BitmapDescriptor.hueOrange,
           ),
@@ -207,10 +215,51 @@ class SearchPageState extends State<SearchPage> {
             MarkerId("345"),
           ),
         );
+
       });
     });
+
+
+//    try{
+//      getUserLocation().then((currentLocations){
+//        print("current location");
+//        print(currentLocations.latitude);
+//        setState(() {
+//          currentLocation = currentLocations;
+//        });
+//        setState(() {
+//          currentLocation = currentLocations;
+//          mapController.moveCamera(
+//            CameraUpdate.newLatLng(
+//              LatLng(currentLocations.latitude, currentLocations.longitude),
+//            ),
+//          );
+//          markers[MarkerId("345")] = Marker(
+//            markerId: MarkerId("345"),
+//            draggable: true,
+//            position: LatLng(currentLocations.latitude, currentLocations.longitude),
+//            icon: BitmapDescriptor.defaultMarkerWithHue(
+//              BitmapDescriptor.hueOrange,
+//            ),
+//            infoWindow:
+//            InfoWindow(title: "Your Location", snippet: 'Pickup'),
+//            onTap: () => _onMarkerTapped(
+//              MarkerId("345"),
+//            ),
+//          );
+//        });
+//      });
+//    }catch(e) {
+//      print("EEEEE $e");
+//    }
+
   }
 
+  getPicupLatLng()async{
+    await Future.delayed(Duration(seconds: 3));
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString("pickupLocation");
+  }
   @override
   void dispose() {
     // TODO: implement dispose
@@ -261,7 +310,7 @@ super.dispose();
                     myLocationButtonEnabled: true,
                     mapType: MapType.normal,
                     initialCameraPosition: CameraPosition(
-                      target: LatLng(37.42796133580664, -122.085749655962),
+                      target: LatLng(33.7159, 73.0655),
                       zoom:zoom,
                     ),
                     markers: Set<Marker>.of(markers.values),
@@ -277,14 +326,14 @@ super.dispose();
                 child: GestureDetector(
                     onTap: () async {
                       print("onTap");
-                      setState(() {
-                        ccc = [];
-                        polylines ={};
-                        markers[MarkerId("123")] = Marker(
-                          markerId: MarkerId("123"),
-                          visible: false,
-                        );
-                      });
+//                      setState(() {
+//                        ccc = [];
+//                        polylines ={};
+//                        markers[MarkerId("123")] = Marker(
+//                          markerId: MarkerId("123"),
+//                          visible: false,
+//                        );
+//                      });
                       // show input autocomplete with selected mode
                       // then get the Prediction selected
                       Prediction p = await PlacesAutocomplete.show(
@@ -301,7 +350,9 @@ super.dispose();
                           mode: _mode,
                           language: "en",
                           radius: 15000,
-                          location: Location(currentLocation.latitude, currentLocation.longitude));
+                          location: Location(pLocation.latitude, pLocation.longitude),
+
+                      );
 
                       displayPrediction(p, _homeScaffoldKey.currentState, context)
                           .then((v) {
@@ -331,10 +382,8 @@ super.dispose();
                           );
                         });
                         print("Hauptbahnhof");
-                        print(currentLocation.latitude);
-                        print(currentLocation.longitude);
                         print(v["latitude"]);
-                        getPolyline(currentLocation.latitude, currentLocation.longitude, v["latitude"], v["longitude"]);
+                        getPolyline(pLocation.latitude, pLocation.longitude, v["latitude"], v["longitude"]);
                       });
                     },
                     child: Container(
@@ -390,6 +439,9 @@ super.dispose();
                                 "rider":currentUserModel.username,
                                 "status":false,
                                 "timestamp":DateTime.now().millisecondsSinceEpoch.toString(),
+                              }).then((res){
+                              Navigator.pushReplacementNamed(
+                                context, "/destination");
                               });
                             },
 
@@ -410,12 +462,12 @@ super.dispose();
                                               Colors.white,
                                           fontSize: 16),
                                     ),
-//                                    Text(
-//                                      "2 km",
-//                                      style: TextStyle(
-//                                          color:
-//                                              Color.fromRGBO(149, 157, 172, 1)),
-//                                    )
+                                    Text(
+                                      "2 km",
+                                      style: TextStyle(
+                                          color:
+                                              Color.fromRGBO(149, 157, 172, 1)),
+                                    )
                                   ],
                                 ),
 //                                Icon(Icons.chevron_right,color: Colors.white,)
@@ -568,7 +620,10 @@ Future displayPrediction(
     final lat = detail.result.geometry.location.lat;
     final lng = detail.result.geometry.location.lng;
     final address = detail.result.formattedAddress;
+    print("AddressAddress");
     print(address);
+    print(lat);
+    print(lng);
 
     return {"latitude": lat, "longitude": lng, "address": address};
   }

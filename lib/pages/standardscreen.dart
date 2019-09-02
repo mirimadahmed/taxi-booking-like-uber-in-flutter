@@ -14,6 +14,10 @@ import 'package:google_maps_webservice/places.dart';
 import 'package:flutter_google_places/flutter_google_places.dart';
 import '../widgets/drawer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+const kGoogleApiKey = "AIzaSyB81xMeMewP3-P3KyUloVMJnvVEhgfHgrI";
+GoogleMapsPlaces _places = GoogleMapsPlaces(apiKey: kGoogleApiKey);
+final _searchScaffoldKey = GlobalKey<ScaffoldState>();
 class StandardScreenPage extends StatefulWidget {
   @override
   State<StatefulWidget> createState() {
@@ -23,9 +27,10 @@ class StandardScreenPage extends StatefulWidget {
 
 
 class StandardScreenPageState extends State<StandardScreenPage> {
+  final GlobalKey<ScaffoldState> _homeScaffoldKey = new GlobalKey<ScaffoldState>();
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   Completer<GoogleMapController> _controller = Completer();
-
+  String address = "";
   MarkerId selectedMarker;
   bool point = false;
   Map<PolylineId, Polyline> polylines = <PolylineId, Polyline>{};
@@ -34,7 +39,8 @@ class StandardScreenPageState extends State<StandardScreenPage> {
   GoogleMapController mapController;
   Map<MarkerId, Marker> markers = <MarkerId, Marker>{};
   String username = "";
-
+  Mode _mode = Mode.overlay;
+  LatLng destination;
     getUserLocation() async {
     //call this async method from wherever you need
 
@@ -137,9 +143,12 @@ class StandardScreenPageState extends State<StandardScreenPage> {
                   height: MediaQuery.of(context).size.height,
                   width: MediaQuery.of(context).size.width,
                   child: GoogleMap(
+                    myLocationEnabled: true,
+                    myLocationButtonEnabled: true,
                     mapType: MapType.normal,
                     initialCameraPosition: _kGooglePlex,
                     onMapCreated: _onMapCreated,
+                    markers: Set<Marker>.of(markers.values),
                   )),
               Container(
                 height: 50.0,
@@ -201,13 +210,74 @@ class StandardScreenPageState extends State<StandardScreenPage> {
                         ),
                         TextField(
                           decoration: InputDecoration(
-                            hintText: "Adresse eingeben",
+                            hintText: address == "" ? "Adresse eingeben" : address,
                             contentPadding: EdgeInsets.all(10),
                             border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10)),
                             filled: true,
                             fillColor: Colors.white,
+                            enabled: true,
                           ),
+                          onTap: ()async{
+                            final SharedPreferences prefs = await SharedPreferences.getInstance();
+                            print("ok");
+                            Prediction p = await PlacesAutocomplete.show(
+                              logo: Container(
+                                height: 1,
+                              ),
+                              context: context,
+                              apiKey: kGoogleApiKey,
+                              hint: "Hauptbahnhof",
+                              onError: (res) {
+                                _homeScaffoldKey.currentState.showSnackBar(
+                                    SnackBar(content: Text(res.errorMessage)));
+                              },
+                              mode: _mode,
+                              language: "en",
+                              radius: 15000,
+//                          location: Location(currentLocation.latitude, currentLocation.longitude),
+
+                            );
+                            displayPrediction(p, _scaffoldKey.currentState, context)
+                            .then((res){
+                              print("addressaddress");
+                              print(res["address"]);
+                              Map addresss = Map();
+                              addresss = {
+                                "address" : res["address"],
+                                "lat" : res["latitude"],
+                                "lng" : res["longitude"],
+                              };
+                              print(addresss);
+                              var encode = jsonEncode(addresss);
+                              prefs.setString("pickupLocation", encode);
+                              setState(() {
+                                address = res["address"];
+                                loacationAddress = res["address"];
+                                destination = LatLng(res["latitude"], res["longitude"]);
+                                mapController.moveCamera(
+                                  CameraUpdate.newLatLng(
+                                    LatLng(res["latitude"], res["longitude"]),
+                                  ),
+                                );
+
+                                markers[MarkerId("120")] = Marker(
+                                  markerId: MarkerId("120"),
+                                  draggable: true,
+                                  position: LatLng(res["latitude"], res["longitude"]),
+                                  icon: BitmapDescriptor.defaultMarkerWithHue(
+                                    BitmapDescriptor.hueGreen,
+                                  ),
+                                  infoWindow:
+                                  InfoWindow(title: "Picup location", snippet: '*'),
+                                  onTap: () => _onMarkerTapped(
+                                    MarkerId("120"),
+                                  ),
+                                );
+                              });
+                            });
+
+                          },
                         ),
                         SizedBox(
                           height: 10,
@@ -281,5 +351,23 @@ class StandardScreenPageState extends State<StandardScreenPage> {
           )),
       drawer: DrawerWidgetPage(),
     );
+  }
+
+
+  Future displayPrediction(
+      Prediction p, ScaffoldState scaffold, BuildContext context) async {
+    if (p != null) {
+      // get detail (lat/lng)
+      PlacesDetailsResponse detail = await _places.getDetailsByPlaceId(p.placeId);
+      final lat = detail.result.geometry.location.lat;
+      final lng = detail.result.geometry.location.lng;
+      final address = detail.result.formattedAddress;
+      print("AddressAddress");
+      print(address);
+      print(lat);
+      print(lng);
+
+      return {"latitude": lat, "longitude": lng, "address": address};
+    }
   }
 }
