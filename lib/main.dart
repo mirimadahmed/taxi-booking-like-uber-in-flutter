@@ -57,10 +57,18 @@ class _MyAppState extends State<MyApp> {
       });
       print(res);
     });
+    _removeLocationPrefs().then((res){
+      print("picup Location removed");
+      print(res);
+    });
   }
   _getUserUID()async{
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString("id");
+  }
+  _removeLocationPrefs()async{
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.remove("pickupLocation");
   }
 
   @override

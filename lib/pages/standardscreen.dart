@@ -41,7 +41,7 @@ class StandardScreenPageState extends State<StandardScreenPage> {
   String username = "";
   Mode _mode = Mode.overlay;
   LatLng destination;
-    getUserLocation() async {
+  getUserLocation() async {
     //call this async method from wherever you need
 
     loc.LocationData currentLocation;
@@ -67,6 +67,7 @@ class StandardScreenPageState extends State<StandardScreenPage> {
     print("raxi");
     print(currentLocation.latitude);
     print(currentLocation.longitude);
+    await Future.delayed(Duration(seconds: 2));
     return currentLocation;
 
   }
@@ -109,7 +110,40 @@ class StandardScreenPageState extends State<StandardScreenPage> {
   @override
   void initState() {
     super.initState();
-    getUserLocation();
+      getUserLocation().then((currentLocations)async{
+        print("current location");
+        print(currentLocations.latitude);
+        final SharedPreferences prefs = await SharedPreferences.getInstance();
+        Map addresss = Map();
+        addresss = {
+          "lat" : currentLocations.latitude,
+          "lng" : currentLocations.longitude,
+        };
+        print(addresss);
+        var encode = jsonEncode(addresss);
+        prefs.setString("pickupLocation", encode);
+        setState(() {
+          mapController.moveCamera(
+            CameraUpdate.newLatLng(
+              LatLng(currentLocations.latitude, currentLocations.longitude),
+            ),
+          );
+          markers[MarkerId("345")] = Marker(
+            markerId: MarkerId("345"),
+            draggable: true,
+            position: LatLng(currentLocations.latitude, currentLocations.longitude),
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+              BitmapDescriptor.hueOrange,
+            ),
+            infoWindow:
+            InfoWindow(title: "Your Location", snippet: 'Pickup'),
+            onTap: () => _onMarkerTapped(
+              MarkerId("345"),
+            ),
+          );
+        });
+      });
+
     _getUserData().then((data){
       print("user data");
       var dta = jsonDecode(data);
@@ -130,6 +164,7 @@ class StandardScreenPageState extends State<StandardScreenPage> {
   Widget build(BuildContext context) {
     Orientation orientation = MediaQuery.of(context).orientation;
     return Scaffold(
+
 //      backgroundColor: Colors.transparent,
 
       key: _scaffoldKey,
@@ -238,44 +273,49 @@ class StandardScreenPageState extends State<StandardScreenPage> {
 //                          location: Location(currentLocation.latitude, currentLocation.longitude),
 
                             );
-                            displayPrediction(p, _scaffoldKey.currentState, context)
-                            .then((res){
-                              print("addressaddress");
-                              print(res["address"]);
-                              Map addresss = Map();
-                              addresss = {
-                                "address" : res["address"],
-                                "lat" : res["latitude"],
-                                "lng" : res["longitude"],
-                              };
-                              print(addresss);
-                              var encode = jsonEncode(addresss);
-                              prefs.setString("pickupLocation", encode);
-                              setState(() {
-                                address = res["address"];
-                                loacationAddress = res["address"];
-                                destination = LatLng(res["latitude"], res["longitude"]);
-                                mapController.moveCamera(
-                                  CameraUpdate.newLatLng(
-                                    LatLng(res["latitude"], res["longitude"]),
-                                  ),
-                                );
+                            print("pppppp");
+                            print("$p");
+                            if(p != null){
+                              displayPrediction(p, _scaffoldKey.currentState, context)
+                                  .then((res){
+                                if(res != null)
+                                  print("addressaddress");
+                                print(res["address"]);
+                                Map addresss = Map();
+                                addresss = {
+                                  "lat" : res["latitude"],
+                                  "lng" : res["longitude"],
+                                };
+                                print(addresss);
+                                var encode = jsonEncode(addresss);
+                                prefs.setString("pickupLocation", encode);
+                                setState(() {
+                                  address = res["address"];
+                                  loacationAddress = res["address"];
+                                  destination = LatLng(res["latitude"], res["longitude"]);
+                                  mapController.moveCamera(
+                                    CameraUpdate.newLatLng(
+                                      LatLng(res["latitude"], res["longitude"]),
+                                    ),
+                                  );
 
-                                markers[MarkerId("120")] = Marker(
-                                  markerId: MarkerId("120"),
-                                  draggable: true,
-                                  position: LatLng(res["latitude"], res["longitude"]),
-                                  icon: BitmapDescriptor.defaultMarkerWithHue(
-                                    BitmapDescriptor.hueGreen,
-                                  ),
-                                  infoWindow:
-                                  InfoWindow(title: "Picup location", snippet: '*'),
-                                  onTap: () => _onMarkerTapped(
-                                    MarkerId("120"),
-                                  ),
-                                );
+                                  markers[MarkerId("120")] = Marker(
+                                    markerId: MarkerId("120"),
+                                    draggable: true,
+                                    position: LatLng(res["latitude"], res["longitude"]),
+                                    icon: BitmapDescriptor.defaultMarkerWithHue(
+                                      BitmapDescriptor.hueGreen,
+                                    ),
+                                    infoWindow:
+                                    InfoWindow(title: "Picup location", snippet: '*'),
+                                    onTap: () => _onMarkerTapped(
+                                      MarkerId("120"),
+                                    ),
+                                  );
+                                });
                               });
-                            });
+                            }
+
 
                           },
                         ),

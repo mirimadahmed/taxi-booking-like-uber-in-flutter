@@ -40,6 +40,8 @@ class SearchPageState extends State<SearchPage> {
   LatLng destination;
   LatLng pLocation;
   bool point = false;
+  bool progress = false;
+
   Map<PolylineId, Polyline> polylines = <PolylineId, Polyline>{};
   NetworkUtil network = new NetworkUtil();
   String loacationAddress = "Loading...";
@@ -52,16 +54,16 @@ class SearchPageState extends State<SearchPage> {
   );
 
   Map picupLocation = Map();
-
+  var distance;
   Future getPolyline(originLat,originLng,destLat,destLng) async {
-//    setState(() {
-//      ccc = [];
-//      polylines ={};
-//      markers[MarkerId("123")] = Marker(
-//        markerId: MarkerId("123"),
-//        visible: false,
-//      );
-//    });
+    setState(() {
+      ccc = [];
+      polylines ={};
+      markers[MarkerId("123")] = Marker(
+        markerId: MarkerId("123"),
+        visible: false,
+      );
+    });
     await network
         .get("origin=" +
         originLat.toString() +
@@ -75,7 +77,11 @@ class SearchPageState extends State<SearchPage> {
         .then((dynamic res) {
       print(res);
       List<Steps> rr = res["steps"];
+      print("distancedistance");
       print(res["distance"]);
+      setState(() {
+        distance = res["distance"];
+      });
 
       for (final i in rr) {
 //            ccc.add(map.Location(
@@ -319,12 +325,33 @@ super.dispose();
                     },
                   ),
               ),
+              Container(
+                height: 50.0,
+                width: 50.0,
+                margin: EdgeInsets.only(left: 10.0, top: 40),
+                child: FittedBox(
+                  child: FloatingActionButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: Icon(
+                      Icons.chevron_left,
+                      color: Colors.white,
+                      size: 40,
+                    ),
+                    backgroundColor: Color.fromRGBO(64, 236, 120, 1.0),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(30.0))),
+                  ),
+                ),
+              ),
               Positioned(
-                top: MediaQuery.of(context).size.height * .1,
+                top: (MediaQuery.of(context).size.height * .2)/1.2,
                 left: 20,
                 right: 20,
                 child: GestureDetector(
                     onTap: () async {
+                      final SharedPreferences prefs = await SharedPreferences.getInstance();
                       print("onTap");
 //                      setState(() {
 //                        ccc = [];
@@ -354,37 +381,46 @@ super.dispose();
 
                       );
 
-                      displayPrediction(p, _homeScaffoldKey.currentState, context)
-                          .then((v) {
-                        print(v["address"]);
-
-                        setState(() {
-
-                          loacationAddress = v["address"];
-                          destination = LatLng(v["latitude"], v["longitude"]);
-                          mapController.moveCamera(
-                            CameraUpdate.newLatLng(
-                              LatLng(v["latitude"], v["longitude"]),
-                            ),
-                          );
-                          markers[MarkerId("123")] = Marker(
-                            markerId: MarkerId("123"),
-                            draggable: true,
-                            position: LatLng(v["latitude"], v["longitude"]),
-                            icon: BitmapDescriptor.defaultMarkerWithHue(
-                              BitmapDescriptor.hueGreen,
-                            ),
-                            infoWindow:
-                            InfoWindow(title: "Destination", snippet: '*'),
-                            onTap: () => _onMarkerTapped(
-                              MarkerId("123"),
-                            ),
-                          );
+                      if(p != null){
+                        displayPrediction(p, _homeScaffoldKey.currentState, context)
+                            .then((v) {
+                          print(v["address"]);
+                          Map destUser = Map();
+                          destUser = {
+                            "lat" : v["latitude"],
+                            "lng" : v["latitude"]
+                          };
+                          print(destUser);
+                          var encode = jsonEncode(destUser);
+                          prefs.setString("destLocation", encode);
+                          setState(() {
+                            loacationAddress = v["address"];
+                            destination = LatLng(v["latitude"], v["latitude"]);
+                            mapController.moveCamera(
+                              CameraUpdate.newLatLng(
+                                LatLng(v["latitude"], v["longitude"]),
+                              ),
+                            );
+                            markers[MarkerId("360")] = Marker(
+                              markerId: MarkerId("360"),
+                              draggable: true,
+                              position: LatLng(v["latitude"], v["longitude"]),
+                              icon: BitmapDescriptor.defaultMarkerWithHue(
+                                BitmapDescriptor.hueGreen,
+                              ),
+                              infoWindow:
+                              InfoWindow(title: "Destination", snippet: '*'),
+                              onTap: () => _onMarkerTapped(
+                                MarkerId("360"),
+                              ),
+                            );
+                          });
+                          print("Hauptbahnhof");
+                          print(v["latitude"]);
+                          getPolyline(pLocation.latitude, pLocation.longitude, v["latitude"], v["longitude"]);
                         });
-                        print("Hauptbahnhof");
-                        print(v["latitude"]);
-                        getPolyline(pLocation.latitude, pLocation.longitude, v["latitude"], v["longitude"]);
-                      });
+                      }
+
                     },
                     child: Container(
                       padding: EdgeInsets.all(20),
@@ -408,7 +444,22 @@ super.dispose();
                     )),
               ),
             destination==null? Container():
-            Positioned(
+            progress ? Positioned(
+              bottom: 15,
+              child: Container(
+                width: MediaQuery.of(context).size.width,
+                child: Container(
+                    padding: EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color:
+                      Color.fromRGBO(64, 236, 120, 1.0),),
+                  child: Center(
+                    child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.white),),
+                  ),
+                ),
+              ),
+            ) : Positioned(
                   bottom: 15,
 //                  left: 15,
 //                  right: 15,
@@ -427,20 +478,26 @@ super.dispose();
                             Color.fromRGBO(64, 236, 120, 1.0),),child:
                     GestureDetector(
                             onTap: () {
+                              setState(() {
+                                progress = true;
+                              });
                               Firestore.instance.collection("rides").add({
                                 "city":currentUserModel.city,
-                                "destination":{"address":loacationAddress,"lat":currentLocation.latitude,"long":currentLocation.longitude}
+                                "destination":{"address":loacationAddress,"lat":destination.latitude,"long":destination.longitude}
                              , "driver":{},
                                 "pickup":{
                                   "address":"Rider Location",
-                                  "lat":currentLocation.latitude,
-                                  "long":currentLocation.longitude
+                                  "lat":pLocation.latitude,
+                                  "long":pLocation.longitude
                                 },
                                 "rider":currentUserModel.username,
                                 "status":false,
                                 "timestamp":DateTime.now().millisecondsSinceEpoch.toString(),
                               }).then((res){
-                              Navigator.pushReplacementNamed(
+                                setState(() {
+                                  progress = false;
+                                });
+                              Navigator.pushNamed(
                                 context, "/destination");
                               });
                             },
@@ -451,9 +508,11 @@ super.dispose();
 
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: <Widget>[
                                 Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: <Widget>[
                                     Text(
                                       "Go",
@@ -462,8 +521,8 @@ super.dispose();
                                               Colors.white,
                                           fontSize: 16),
                                     ),
-                                    Text(
-                                      "2 km",
+                                    distance == null ? SizedBox(height: 0.0,) : Text(
+                                      distance,
                                       style: TextStyle(
                                           color:
                                               Color.fromRGBO(149, 157, 172, 1)),

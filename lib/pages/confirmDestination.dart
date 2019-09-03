@@ -1,7 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:moover/widgets/drawer.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:async';
+
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ConfirmDestination extends StatefulWidget {
   @override
@@ -13,7 +17,7 @@ class ConfirmDestination extends StatefulWidget {
 class ConfirmDestinationState extends State<ConfirmDestination> {
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   Completer<GoogleMapController> _controller = Completer();
-
+  GoogleMapController mapController;
   Map<MarkerId, Marker> markers = <MarkerId, Marker>{
 
   };
@@ -47,6 +51,56 @@ class ConfirmDestinationState extends State<ConfirmDestination> {
   @override
   void initState() {
     super.initState();
+    getDestLocation().then((res){
+      var decode = jsonDecode(res);
+
+      setState(() {
+        mapController.moveCamera(
+          CameraUpdate.newLatLng(
+            LatLng(decode["lat"], decode["lng"]),
+          ),
+        );
+        markers[MarkerId("345")] = Marker(
+          markerId: MarkerId("345"),
+          draggable: true,
+          position: LatLng(decode["lat"], decode["lng"]),
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueOrange,
+          ),
+          infoWindow:
+          InfoWindow(title: "Your Location", snippet: 'Destination'),
+          onTap: () => _onMarkerTapped(
+            MarkerId("345"),
+          ),
+        );
+
+      });
+    });
+  }
+  MarkerId selectedMarker;
+  void _onMarkerTapped(MarkerId markerId) {
+    final Marker tappedMarker = markers[markerId];
+    if (tappedMarker != null) {
+      setState(() {
+        if (markers.containsKey(selectedMarker)) {
+          final Marker resetOld = markers[selectedMarker]
+              .copyWith(iconParam: BitmapDescriptor.defaultMarker);
+          markers[selectedMarker] = resetOld;
+        }
+        selectedMarker = markerId;
+        final Marker newMarker = tappedMarker.copyWith(
+          iconParam: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueAzure,
+          ),
+        );
+        markers[markerId] = newMarker;
+      });
+    }
+  }
+  getDestLocation()async{
+    await Future.delayed(Duration(seconds: 3));
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString("destLocation");
   }
 
   @override
@@ -70,7 +124,7 @@ class ConfirmDestinationState extends State<ConfirmDestination> {
                     markers: Set<Marker>.of(markers.values),
                     initialCameraPosition: _kGooglePlex,
                     onMapCreated: (GoogleMapController controller) {
-                      _controller.complete(controller);
+                      mapController=controller;
                     },
                   )),
               Container(
@@ -80,7 +134,7 @@ class ConfirmDestinationState extends State<ConfirmDestination> {
                 child: FittedBox(
                   child: FloatingActionButton(
                     onPressed: () {
-                      _scaffoldKey.currentState.openDrawer();
+                      Navigator.of(context).pop();
                     },
                     child: Icon(
                       Icons.chevron_left,
