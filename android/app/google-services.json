@@ -1,0 +1,69 @@
+{
+  "project_info": {
+    "project_number": "747533031517",
+    "firebase_url": "https://moover-c222d.firebaseio.com",
+    "project_id": "moover-c222d",
+    "storage_bucket": "moover-c222d.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:747533031517:android:422d2eb2fb6350a5",
+        "android_client_info": {
+          "package_name": "com.example.moover"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "747533031517-e36uopffogt7au4989g7ntsn04oih79n.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_27NcZvIfWo_LkJJv_upsvTMGkS7kwEc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "747533031517-e36uopffogt7au4989g7ntsn04oih79n.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:747533031517:android:12520e595bfff3c2",
+        "android_client_info": {
+          "package_name": "com.example.mooverdriver"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "747533031517-e36uopffogt7au4989g7ntsn04oih79n.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_27NcZvIfWo_LkJJv_upsvTMGkS7kwEc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "747533031517-e36uopffogt7au4989g7ntsn04oih79n.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
