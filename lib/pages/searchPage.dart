@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:moover/widgets/drawer.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import '../widgets/network.dart';
 import '../widgets/route.dart';
@@ -35,21 +38,30 @@ class SearchPageState extends State<SearchPage> {
   MarkerId selectedMarker;
   loc.LocationData currentLocation;
   LatLng destination;
+  LatLng pLocation;
   bool point = false;
   Map<PolylineId, Polyline> polylines = <PolylineId, Polyline>{};
   NetworkUtil network = new NetworkUtil();
   String loacationAddress = "Loading...";
   Map<MarkerId, Marker> markers = <MarkerId, Marker>{};
   Mode _mode = Mode.overlay;
+  double zoom = 14.4647;
   static final CameraPosition _kGooglePlex = CameraPosition(
     target: LatLng(37.42796133580664, -122.085749655962),
-    zoom: 14.4746,
+    zoom:14.4746,
   );
 
+  Map picupLocation = Map();
 
   Future getPolyline(originLat,originLng,destLat,destLng) async {
-
-
+//    setState(() {
+//      ccc = [];
+//      polylines ={};
+//      markers[MarkerId("123")] = Marker(
+//        markerId: MarkerId("123"),
+//        visible: false,
+//      );
+//    });
     await network
         .get("origin=" +
         originLat.toString() +
@@ -59,7 +71,7 @@ class SearchPageState extends State<SearchPage> {
         destLat.toString() +
         "," +
         destLng.toString() +
-        "&mode=walking&key=AIzaSyB81xMeMewP3-P3KyUloVMJnvVEhgfHgrI")
+        "&mode=walking&key=$kGoogleApiKey")
         .then((dynamic res) {
       print(res);
       List<Steps> rr = res["steps"];
@@ -70,12 +82,12 @@ class SearchPageState extends State<SearchPage> {
 //                i.startLocation.latitude, i.startLocation.longitude));
 //            ccc.add(map.Location(
 //                i.endLocation.latitude, i.endLocation.longitude));
+        print("i.polyline");
         print(i.polyline);
         decodePoly(i.polyline);
       }
 //
     });
-
     setState(() {
         polylines[PolylineId("poly1")] = Polyline(polylineId: PolylineId("poly1"),points: ccc);
       });
@@ -85,6 +97,7 @@ class SearchPageState extends State<SearchPage> {
 
   void decodePoly(String encoded) {
     int index = 0, len = encoded.length;
+    print("len : $len");
     int lat = 0, lng = 0;
 
     while (index < len) {
@@ -92,13 +105,16 @@ class SearchPageState extends State<SearchPage> {
 
       do {
         var asc = encoded.codeUnitAt(index++);
-
+        print("asc L $asc");
         b = asc - 63;
-
+        print("b1:$b");
         result |= (b & 0x1f) << shift;
+        print("result: $result");
         shift += 5;
+        print("shift: $shift");
       } while (b >= 0x20);
       int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      print("dlat1: $dlat");
       lat += dlat;
       print("lat=${lat / 100000.0}");
 
@@ -106,25 +122,29 @@ class SearchPageState extends State<SearchPage> {
       result = 0;
       do {
         var asc = encoded.codeUnitAt(index++);
+        print("ascasc: $asc");
         b = asc - 63;
+        print("bbb: $b");
         result |= (b & 0x1f) << shift;
+        print("result2: $result");
         shift += 5;
+        print("shift: $shift");
       } while (b >= 0x20);
       int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      print("dlng2:$dlng");
       lng += dlng;
-
+      print("lng2: $lng");
       ccc.add(LatLng(lat / 100000.0, lng / 100000.0));
     }
   }
 
   getUserLocation() async {
-    //call this async method from whereever you need
-
-
     var myLocation;
     String error;
     loc.Location location = new loc.Location();
+
     try {
+      print("getting location....");
       myLocation = await location.getLocation();
     } on PlatformException catch (e) {
       if (e.code == 'PERMISSION_DENIED') {
@@ -137,41 +157,109 @@ class SearchPageState extends State<SearchPage> {
       }
       myLocation = null;
     }
-    currentLocation = myLocation;
+    print("Location of my : ${myLocation}");
+    return myLocation;
+//    currentLocation = myLocation;
+//
+//
+//    print("raxi");
+//    return currentLocation;
 
-
-    print("raxi");
-
-
-
-    setState(() {
-      mapController.moveCamera(
-        CameraUpdate.newLatLng(
-          LatLng(currentLocation.latitude, currentLocation.longitude),
-        ),
-      );
-      markers[MarkerId("345")] = Marker(
-        markerId: MarkerId("345"),
-        draggable: true,
-        position: LatLng(currentLocation.latitude, currentLocation.longitude),
-        icon: BitmapDescriptor.defaultMarkerWithHue(
-          BitmapDescriptor.hueOrange,
-        ),
-        infoWindow:
-        InfoWindow(title: "Your Location", snippet: 'Pickup'),
-        onTap: () => _onMarkerTapped(
-          MarkerId("345"),
-        ),
-      );
-    });
+//    setState(() {
+//      mapController.moveCamera(
+//        CameraUpdate.newLatLng(
+//          LatLng(currentLocation.latitude, currentLocation.longitude),
+//        ),
+//      );
+//      markers[MarkerId("345")] = Marker(
+//        markerId: MarkerId("345"),
+//        draggable: true,
+//        position: LatLng(currentLocation.latitude, currentLocation.longitude),
+//        icon: BitmapDescriptor.defaultMarkerWithHue(
+//          BitmapDescriptor.hueOrange,
+//        ),
+//        infoWindow:
+//        InfoWindow(title: "Your Location", snippet: 'Pickup'),
+//        onTap: () => _onMarkerTapped(
+//          MarkerId("345"),
+//        ),
+//      );
+//    });
   }
 
   @override
   void initState() {
     super.initState();
-    getUserLocation();
+
+    getPicupLatLng().then((res){
+      var decode = jsonDecode(res);
+      setState(() {
+        pLocation = LatLng(decode["lat"], decode["lng"]);
+      });
+      setState(() {
+        mapController.moveCamera(
+          CameraUpdate.newLatLng(
+            LatLng(decode["lat"], decode["lng"]),
+            ),
+          );
+        markers[MarkerId("345")] = Marker(
+          markerId: MarkerId("345"),
+          draggable: true,
+          position: LatLng(decode["lat"], decode["lng"]),
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueOrange,
+          ),
+          infoWindow:
+          InfoWindow(title: "Your Location", snippet: 'Pickup'),
+          onTap: () => _onMarkerTapped(
+            MarkerId("345"),
+          ),
+        );
+
+      });
+    });
+
+
+//    try{
+//      getUserLocation().then((currentLocations){
+//        print("current location");
+//        print(currentLocations.latitude);
+//        setState(() {
+//          currentLocation = currentLocations;
+//        });
+//        setState(() {
+//          currentLocation = currentLocations;
+//          mapController.moveCamera(
+//            CameraUpdate.newLatLng(
+//              LatLng(currentLocations.latitude, currentLocations.longitude),
+//            ),
+//          );
+//          markers[MarkerId("345")] = Marker(
+//            markerId: MarkerId("345"),
+//            draggable: true,
+//            position: LatLng(currentLocations.latitude, currentLocations.longitude),
+//            icon: BitmapDescriptor.defaultMarkerWithHue(
+//              BitmapDescriptor.hueOrange,
+//            ),
+//            infoWindow:
+//            InfoWindow(title: "Your Location", snippet: 'Pickup'),
+//            onTap: () => _onMarkerTapped(
+//              MarkerId("345"),
+//            ),
+//          );
+//        });
+//      });
+//    }catch(e) {
+//      print("EEEEE $e");
+//    }
+
   }
 
+  getPicupLatLng()async{
+    await Future.delayed(Duration(seconds: 3));
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString("pickupLocation");
+  }
   @override
   void dispose() {
     // TODO: implement dispose
@@ -221,18 +309,31 @@ super.dispose();
                     polylines: Set<Polyline>.of(polylines.values),
                     myLocationButtonEnabled: true,
                     mapType: MapType.normal,
-                    initialCameraPosition: _kGooglePlex,
+                    initialCameraPosition: CameraPosition(
+                      target: LatLng(33.7159, 73.0655),
+                      zoom:zoom,
+                    ),
                     markers: Set<Marker>.of(markers.values),
                     onMapCreated: (GoogleMapController controller) {
                       mapController=controller;
                     },
-                  )),
+                  ),
+              ),
               Positioned(
-                top: 40,
+                top: MediaQuery.of(context).size.height * .1,
                 left: 20,
                 right: 20,
                 child: GestureDetector(
                     onTap: () async {
+                      print("onTap");
+//                      setState(() {
+//                        ccc = [];
+//                        polylines ={};
+//                        markers[MarkerId("123")] = Marker(
+//                          markerId: MarkerId("123"),
+//                          visible: false,
+//                        );
+//                      });
                       // show input autocomplete with selected mode
                       // then get the Prediction selected
                       Prediction p = await PlacesAutocomplete.show(
@@ -249,13 +350,16 @@ super.dispose();
                           mode: _mode,
                           language: "en",
                           radius: 15000,
-                          location: Location(currentLocation.latitude, currentLocation.longitude));
+                          location: Location(pLocation.latitude, pLocation.longitude),
+
+                      );
 
                       displayPrediction(p, _homeScaffoldKey.currentState, context)
                           .then((v) {
                         print(v["address"]);
 
                         setState(() {
+
                           loacationAddress = v["address"];
                           destination = LatLng(v["latitude"], v["longitude"]);
                           mapController.moveCamera(
@@ -277,10 +381,9 @@ super.dispose();
                             ),
                           );
                         });
-                        print(currentLocation.latitude);
-                        print(currentLocation.longitude);
+                        print("Hauptbahnhof");
                         print(v["latitude"]);
-                        getPolyline(31.440807, 74.293950, v["latitude"], v["longitude"]);
+                        getPolyline(pLocation.latitude, pLocation.longitude, v["latitude"], v["longitude"]);
                       });
                     },
                     child: Container(
@@ -304,15 +407,13 @@ super.dispose();
                       ),
                     )),
               ),
-            destination==null? Container():  Positioned(
+            destination==null? Container():
+            Positioned(
                   bottom: 15,
 //                  left: 15,
 //                  right: 15,
 
                   child: Container(
-
-
-
 //                    height: 30,
                   width: MediaQuery.of(context).size.width,
                     child: Row(
@@ -338,6 +439,9 @@ super.dispose();
                                 "rider":currentUserModel.username,
                                 "status":false,
                                 "timestamp":DateTime.now().millisecondsSinceEpoch.toString(),
+                              }).then((res){
+                              Navigator.pushReplacementNamed(
+                                context, "/destination");
                               });
                             },
 
@@ -358,12 +462,12 @@ super.dispose();
                                               Colors.white,
                                           fontSize: 16),
                                     ),
-//                                    Text(
-//                                      "2 km",
-//                                      style: TextStyle(
-//                                          color:
-//                                              Color.fromRGBO(149, 157, 172, 1)),
-//                                    )
+                                    Text(
+                                      "2 km",
+                                      style: TextStyle(
+                                          color:
+                                              Color.fromRGBO(149, 157, 172, 1)),
+                                    )
                                   ],
                                 ),
 //                                Icon(Icons.chevron_right,color: Colors.white,)
@@ -516,7 +620,10 @@ Future displayPrediction(
     final lat = detail.result.geometry.location.lat;
     final lng = detail.result.geometry.location.lng;
     final address = detail.result.formattedAddress;
+    print("AddressAddress");
     print(address);
+    print(lat);
+    print(lng);
 
     return {"latitude": lat, "longitude": lng, "address": address};
   }

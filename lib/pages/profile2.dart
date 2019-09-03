@@ -54,9 +54,8 @@ class _Profile2PageState extends State<Profile2Page>
                   padding: EdgeInsets.all(10),
                   child: Column(children: <Widget>[
                     TextFormField(
-
                       decoration: const InputDecoration(
-                        hintText: 'mustermail@muster.com',
+                          hintText: 'mustermail@muster.com',
 //                    labelText: 'mustermail@muster.com',
 //                    labelStyle: TextStyle(color: Colors.black),
                           contentPadding: EdgeInsets.all(0.0)),
@@ -66,36 +65,40 @@ class _Profile2PageState extends State<Profile2Page>
                         }
                         return null;
                       },
-
                     ),
                     SizedBox(
                       height: 10,
                     ),
-                    Row(children: <Widget>[CountryCodePicker(
-                      onChanged: print,
-                      // Initial selection and favorite can be one of code ('IT') OR dial_code('+39')
-                      initialSelection: 'IT',
-                      favorite: ['+39','FR'],
-                      // optional. Shows only country name and flag
-                      showCountryOnly: false,
-                    ),
-                    Flexible(child: TextFormField(
-                      keyboardType: TextInputType.numberWithOptions(),
-                      decoration: const InputDecoration(
-hintText: "17612345678"
+                    Row(
+                      children: <Widget>[
+                        CountryCodePicker(
+                          onChanged: print,
+                          // Initial selection and favorite can be one of code ('IT') OR dial_code('+39')
+                          initialSelection: 'IT',
+                          favorite: ['+39', 'FR'],
+                          // optional. Shows only country name and flag
+                          showCountryOnly: false,
+                        ),
+                        Flexible(
+                            child: TextFormField(
+                          keyboardType: TextInputType.numberWithOptions(),
+                          decoration:
+                              const InputDecoration(hintText: "17612345678"
 //                    labelText: 'Mechito',
 //                    labelStyle: TextStyle(color: Colors.black),
 //                    contentPadding: EdgeInsets.all(0.0),
 //                    icon: Icons.
 
-                          ),
-                      validator: (value) {
-                        if (value.isEmpty) {
-                          return 'Enter some text';
-                        }
-                        return null;
-                      },
-                    ))],),
+                                  ),
+                          validator: (value) {
+                            if (value.isEmpty) {
+                              return 'Enter some text';
+                            }
+                            return null;
+                          },
+                        ))
+                      ],
+                    ),
                     SizedBox(
                       height: 30,
                     ),

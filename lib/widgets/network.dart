@@ -20,6 +20,7 @@ class NetworkUtil {
     return http.get(BASE_URL + url).then((http.Response response) {
       String res = response.body;
       int statusCode = response.statusCode;
+      print(statusCode.toString());
       print('API response: '+ res);
       if (statusCode < 200 || statusCode > 400 || json == null) {
         res = "{\"status\":" +
@@ -39,7 +40,7 @@ class NetworkUtil {
       } catch (e) {
         throw new Exception(res);
       }
-
+      print("distance");
       return {"distance": distance, "steps":steps};
     });
   }
@@ -47,7 +48,7 @@ class NetworkUtil {
   List<Steps> parseSteps(final responseBody) {
     var list =
     responseBody.map<Steps>((json) => new Steps.fromJson(json)).toList();
-
+    print("list");
     return list;
   }
 }
