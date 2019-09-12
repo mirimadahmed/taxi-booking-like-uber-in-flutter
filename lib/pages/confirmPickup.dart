@@ -1,7 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:moover/widgets/drawer.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:async';
+
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ConfirmPickup extends StatefulWidget {
   @override
@@ -13,7 +17,7 @@ class ConfirmPickup extends StatefulWidget {
 class ConfirmPickupState extends State<ConfirmPickup> {
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   Completer<GoogleMapController> _controller = Completer();
-
+  GoogleMapController mapController;
   Map<MarkerId, Marker> markers = <MarkerId, Marker>{
 
   };
@@ -22,7 +26,7 @@ class ConfirmPickupState extends State<ConfirmPickup> {
   @override
   void dispose() {
     // TODO: implement dispose
-
+   super.dispose();
   }
 
   final Marker marker = Marker(
@@ -46,12 +50,59 @@ class ConfirmPickupState extends State<ConfirmPickup> {
     target: LatLng(37.42796133580664, -122.085749655962),
     zoom: 14.4746,
   );
-
+  getPicupLatLng()async{
+    await Future.delayed(Duration(seconds: 3));
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString("pickupLocation");
+  }
   @override
   void initState() {
     super.initState();
-  }
+    getPicupLatLng().then((res){
+      var decode = jsonDecode(res);
+      setState(() {
+        mapController.moveCamera(
+          CameraUpdate.newLatLng(
+            LatLng(decode["lat"], decode["lng"]),
+          ),
+        );
+        markers[MarkerId("345")] = Marker(
+          markerId: MarkerId("345"),
+          draggable: true,
+          position: LatLng(decode["lat"], decode["lng"]),
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueOrange,
+          ),
+          infoWindow:
+          InfoWindow(title: "Your Location", snippet: 'Pickup'),
+          onTap: () => _onMarkerTapped(
+            MarkerId("345"),
+          ),
+        );
 
+      });
+    });
+  }
+  MarkerId selectedMarker;
+  void _onMarkerTapped(MarkerId markerId) {
+    final Marker tappedMarker = markers[markerId];
+    if (tappedMarker != null) {
+      setState(() {
+        if (markers.containsKey(selectedMarker)) {
+          final Marker resetOld = markers[selectedMarker]
+              .copyWith(iconParam: BitmapDescriptor.defaultMarker);
+          markers[selectedMarker] = resetOld;
+        }
+        selectedMarker = markerId;
+        final Marker newMarker = tappedMarker.copyWith(
+          iconParam: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueAzure,
+          ),
+        );
+        markers[markerId] = newMarker;
+      });
+    }
+  }
   @override
   Widget build(BuildContext context) {
     markers[MarkerId("Destination")] = marker;
@@ -73,7 +124,7 @@ class ConfirmPickupState extends State<ConfirmPickup> {
                     markers: Set<Marker>.of(markers.values),
                     initialCameraPosition: _kGooglePlex,
                     onMapCreated: (GoogleMapController controller) {
-                      _controller.complete(controller);
+                      mapController=controller;
                     },
                   )),
               Container(

@@ -388,14 +388,15 @@ super.dispose();
                           Map destUser = Map();
                           destUser = {
                             "lat" : v["latitude"],
-                            "lng" : v["latitude"]
+                            "lng" : v["longitude"]
                           };
+                          print("destuser");
                           print(destUser);
                           var encode = jsonEncode(destUser);
                           prefs.setString("destLocation", encode);
                           setState(() {
                             loacationAddress = v["address"];
-                            destination = LatLng(v["latitude"], v["latitude"]);
+                            destination = LatLng(v["latitude"], v["longitude"]);
                             mapController.moveCamera(
                               CameraUpdate.newLatLng(
                                 LatLng(v["latitude"], v["longitude"]),

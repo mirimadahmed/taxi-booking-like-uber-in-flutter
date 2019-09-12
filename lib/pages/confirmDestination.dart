@@ -18,9 +18,8 @@ class ConfirmDestinationState extends State<ConfirmDestination> {
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   Completer<GoogleMapController> _controller = Completer();
   GoogleMapController mapController;
-  Map<MarkerId, Marker> markers = <MarkerId, Marker>{
-
-  };
+  double zoom = 14.4647;
+  Map<MarkerId, Marker> markers = <MarkerId, Marker>{};
 
   final Marker marker = Marker(
     markerId: MarkerId("Destination"),
@@ -39,6 +38,7 @@ class ConfirmDestinationState extends State<ConfirmDestination> {
   @override
   void dispose() {
     // TODO: implement dispose
+    super.dispose();
 
   }
 
@@ -47,30 +47,30 @@ class ConfirmDestinationState extends State<ConfirmDestination> {
     target: LatLng(37.42796133580664, -122.085749655962),
     zoom: 14.4746,
   );
-
   @override
   void initState() {
     super.initState();
     getDestLocation().then((res){
       var decode = jsonDecode(res);
 
+      print("lat :${decode["lat"]}");
+      print("lat :${decode["lng"]}");
       setState(() {
         mapController.moveCamera(
           CameraUpdate.newLatLng(
             LatLng(decode["lat"], decode["lng"]),
           ),
         );
-        markers[MarkerId("345")] = Marker(
-          markerId: MarkerId("345"),
-          draggable: true,
+        markers[MarkerId("360")] = Marker(
+          markerId: MarkerId("360"),
           position: LatLng(decode["lat"], decode["lng"]),
           icon: BitmapDescriptor.defaultMarkerWithHue(
-            BitmapDescriptor.hueOrange,
+            BitmapDescriptor.hueGreen,
           ),
           infoWindow:
-          InfoWindow(title: "Your Location", snippet: 'Destination'),
+          InfoWindow(title: "Destination", snippet: '*'),
           onTap: () => _onMarkerTapped(
-            MarkerId("345"),
+            MarkerId("360"),
           ),
         );
 
@@ -122,7 +122,10 @@ class ConfirmDestinationState extends State<ConfirmDestination> {
                   child: GoogleMap(
                     mapType: MapType.normal,
                     markers: Set<Marker>.of(markers.values),
-                    initialCameraPosition: _kGooglePlex,
+                    initialCameraPosition: CameraPosition(
+                      target: LatLng(33.7159, 73.0655),
+                      zoom:zoom,
+                    ),
                     onMapCreated: (GoogleMapController controller) {
                       mapController=controller;
                     },
