@@ -1,7 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:moover/main.dart';
 import 'package:moover/widgets/listTileDrives.dart';
-
+import 'package:intl/intl.dart';
 // This app is a stateful, it tracks the user's current choice.
 class DrivesPage extends StatefulWidget {
 
@@ -11,10 +13,17 @@ class DrivesPage extends StatefulWidget {
 
 class _DrivesPageState extends State<DrivesPage> with SingleTickerProviderStateMixin{
 
-
+  List<DocumentSnapshot> snapShot;
   @override
   void initState() {
     super.initState();
+    print("FireStore rides");
+    Firestore.instance.collection("rides").reference().where("userId", isEqualTo: currentUserModel.id).getDocuments().then((res){
+      print("userID");
+      setState(() {
+        snapShot = res.documents;
+      });
+    });
   }
 
   @override
@@ -33,136 +42,71 @@ class _DrivesPageState extends State<DrivesPage> with SingleTickerProviderStateM
 
         ),
         body:Container (
-
-          child: ListView(
-
+          child: Column(
             children: <Widget>[
               Center(child: Text("Verlauf",style: TextStyle(fontSize:12.0,color: Color.fromRGBO(112, 112, 112, 1.0)),),),
               Padding(padding:EdgeInsets.all(3)),
               Container(height: 3,color: Color.fromRGBO(32,110,65,1.0),),
-
-              GestureDetector(
-                    onTap: (){
-                    Navigator.pushNamed(context, "/profile");
+              snapShot == null ? Container(
+                child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.green),),
+              ) : Flexible(
+                child: ListView(
+                  children:List.generate(snapShot.length, (int index){
+                    final f = new DateFormat('yyyy-MM-dd');
+                    String format = f.format(DateTime.fromMillisecondsSinceEpoch(int.parse(snapShot[index].data["timestamp"])));
+                    String format1 = DateFormat().add_jm().format(DateTime.fromMillisecondsSinceEpoch(int.parse(snapShot[index].data["timestamp"])));
+                    return Column(
+                      children: <Widget>[
+                        GestureDetector(
+                        onTap: (){
+                        Navigator.pushNamed(context, "/profile");
                   },
                 child: CustomListItem(
                   thumbnail: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: <Widget>[
-                      Text(
-                        "5,55 €",style: TextStyle(color: Color.fromRGBO(32,110,65,1.0)),
-                      ),
-                      SizedBox(height: 20,),
-                      Container(
-                          width: 60.00,
-                          height: 60.00,
-//                              margin: EdgeInsets.only(top: 50.0,left: 20),
-                          decoration: new BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            image: new DecorationImage(
-                              image: ExactAssetImage('assets/profileImage.jpg'),
-                              fit: BoxFit.fitHeight,
-                            ),
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: <Widget>[
+                          Text(
+                            "5,55 €",style: TextStyle(color: Color.fromRGBO(32,110,65,1.0)),
                           ),
-                          child: Container(child: Image.asset("assets/rating.png"),alignment: Alignment.bottomRight,)
-                      ),
-                      SizedBox(height: 5,),
-                      Text(
-                          "Alex",style: TextStyle(color: Color.fromRGBO(32,110,65,1.0))
-                      ),
+                          SizedBox(height: 5,),
+                          Container(
+                              width: 60.00,
+                              height: 60.00,
+//                              margin: EdgeInsets.only(top: 50.0,left: 20),
+                              decoration: new BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                image: new DecorationImage(
+                                  image: ExactAssetImage('assets/profileImage.jpg'),
+                                  fit: BoxFit.fitHeight,
+                                ),
+                              ),
+                              child: Container(child: Image.asset("assets/rating.png"),alignment: Alignment.bottomRight,)
+                          ),
+                          SizedBox(height: 5,),
+                          Text(
+                              snapShot[index].data["rider"].toString() ?? "",style: TextStyle(color: Color.fromRGBO(32,110,65,1.0),
+                          )
+                              ,maxLines: 1,
+                          ),
 
-                    ],
+                        ],
                   ),
-                  timeTitle: "23.05.2019, 03:47",
-                  first: "Maximiliansplatz 5, 80333 München",
-                  second: "Maximiliansplatz 5, 80333 München",
+
+//                  timeTitle: DateTime.fromMillisecondsSinceEpoch(int.parse(snapShot[index].data["timestamp"])).toString(),
+                  timeTitle: format.toString() +" " +format1.toString(),
+                  first: snapShot[index].data["pickup"]["address"].toString() ?? "",
+                  second: snapShot[index].data["destination"]["address"].toString() ?? "",
                 ),
               ),
-              Container(width: MediaQuery.of(context).size.width,color: Color.fromRGBO(112, 112, 112, 0.3),height: 1.0,),
-
-              GestureDetector(
-                onTap: (){
-                  Navigator.pushNamed(context, "/profile");
-                },
-                child: CustomListItem(
-                  thumbnail: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: <Widget>[
-                      Text(
-                        "5,55 €",style: TextStyle(color: Color.fromRGBO(32,110,65,1.0)),
-                      ),
-                      SizedBox(height: 20,),
-                      Container(
-                          width: 60.00,
-                          height: 60.00,
-//                              margin: EdgeInsets.only(top: 50.0,left: 20),
-                          decoration: new BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            image: new DecorationImage(
-                              image: ExactAssetImage('assets/profileImage.jpg'),
-                              fit: BoxFit.fitHeight,
-                            ),
-                          ),
-                          child: Container(child: Image.asset("assets/rating.png"),alignment: Alignment.bottomRight,)
-                      ),
-                      SizedBox(height: 5,),
-                      Text(
-                          "Alex",style: TextStyle(color: Color.fromRGBO(32,110,65,1.0))
-                      ),
-
-                    ],
-                  ),
-                  timeTitle: "23.05.2019, 03:47",
-                  first: "Maximiliansplatz 5, 80333 München",
-                  second: "Maximiliansplatz 5, 80333 München",
+                        Divider()
+                      ],
+                    );
+                  }),
                 ),
               ),
-              Container(width: MediaQuery.of(context).size.width,color: Color.fromRGBO(112, 112, 112, 0.3),height: 1.0,),
-
-              GestureDetector(
-                onTap: (){
-                  Navigator.pushNamed(context, "/profile");
-                },
-                child: CustomListItem(
-                  thumbnail: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: <Widget>[
-                      Text(
-                        "5,55 €",style: TextStyle(color: Color.fromRGBO(32,110,65,1.0)),
-                      ),
-                      SizedBox(height: 20,),
-                      Container(
-                          width: 60.00,
-                          height: 60.00,
-//                              margin: EdgeInsets.only(top: 50.0,left: 20),
-                          decoration: new BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            image: new DecorationImage(
-                              image: ExactAssetImage('assets/profileImage.jpg'),
-                              fit: BoxFit.fitHeight,
-                            ),
-                          ),
-                          child: Container(child: Image.asset("assets/rating.png"),alignment: Alignment.bottomRight,)
-                      ),
-                      SizedBox(height: 5,),
-                      Text(
-                          "Alex",style: TextStyle(color: Color.fromRGBO(32,110,65,1.0))
-                      ),
-
-                    ],
-                  ),
-                  timeTitle: "23.05.2019, 03:47",
-                  first: "Maximiliansplatz 5, 80333 München",
-                  second: "Maximiliansplatz 5, 80333 München",
-                ),
-              ),
-              Container(width: MediaQuery.of(context).size.width,color: Color.fromRGBO(112, 112, 112, 0.3),height: 1.0,)
-
             ],
           ),
-
         ),
-
       ),
     );
   }

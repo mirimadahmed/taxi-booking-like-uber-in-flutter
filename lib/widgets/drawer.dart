@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 
+import 'package:moover/main.dart';
+import 'package:moover/pages/auth/login.dart';
+import 'package:moover/pages/standardscreen.dart';
+import 'package:page_transition/page_transition.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 class DrawerWidgetPage extends StatefulWidget {
   @override
   State<StatefulWidget> createState() {
@@ -15,8 +21,6 @@ class drawerWidgetPageState extends State<DrawerWidgetPage>{
   @override
   Widget build(BuildContext context) {
     return Drawer(
-
-
       child: BackdropFilter(
         filter: ui.ImageFilter.blur(sigmaX:500 ,sigmaY: 5),
         child: Container(
@@ -61,14 +65,14 @@ class drawerWidgetPageState extends State<DrawerWidgetPage>{
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        'Mikey Mechito',
+                        currentUserModel.username ?? "",
                         style: TextStyle(
                             fontSize: 24.0,
                             color: Colors.white,
                             fontWeight: FontWeight.w600),
                       ),
                       Text(
-                        '@mechitomike',
+                        currentUserModel.email ?? "",
                         style: TextStyle(
                           fontSize: 16.0,
                           color: Colors.white,
@@ -277,7 +281,7 @@ Container(color: Colors.grey[300],height: 8,),
 //                      color: Colors.white, size: 30.0),
 //                                selected: _index == 1,
                   onTap: () async {
-                    Navigator.pushNamed(context, '/constat');
+//                    Navigator.pushNamed(context, '/constat');
                     // Update the state of the app
                     // ...
                     // Then close the drawer
@@ -361,8 +365,7 @@ Container(color: Colors.grey[300],height: 8,),
                             color: Colors.white, fontSize: 12.0),
                       ),
 //                                selected: _index == 1,
-                      onPressed: () async {
-
+                      onPressed: (){
 
                         // Update the state
                         //of the app
@@ -388,13 +391,18 @@ Container(color: Colors.grey[300],height: 8,),
 //                            color: Colors.white,
 //                            size: 20.0),
 ////                                  selected: _index == 1,
-                  onTap: () async {
+                  onTap: (){
+
+                    SharedPreferences.getInstance().then((res)async{
+                      await res.clear();
+                      Navigator.pushReplacement(context, PageTransition(type: PageTransitionType.downToUp, child: Login()));
+                    });
                     // Update the state of the app
                     // ...
                     // Then close the drawer
-                    setState(() {
-                      gestion1 = gestion1 ? false : true;
-                    });
+//                    setState(() {
+//                      gestion1 = gestion1 ? true : false;
+//                    });
 
                   },
                 ),
@@ -415,7 +423,7 @@ Container(color: Colors.grey[300],height: 8,),
 //                                selected: _index == 1,
                       onTap: () async {
 
-                        Navigator.pushNamed(context,'/noval');
+//                        Navigator.pushNamed(context,'/noval');
                         // Update the state of the app
                         // ...
                         // Then close the drawer
@@ -434,7 +442,7 @@ Container(color: Colors.grey[300],height: 8,),
 //                                selected: _index == 1,
                       onTap: () async {
 
-                        Navigator.pushNamed(context,'/gestion');
+//                        Navigator.pushNamed(context,'/gestion');
                         // Update the state of the app
                         // ...
                         // Then close the drawer
@@ -447,10 +455,6 @@ Container(color: Colors.grey[300],height: 8,),
           ),
         ),
       ),
-
-
-
-
     );
   }
 }

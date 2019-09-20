@@ -1,7 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:moover/widgets/drawer.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:async';
+
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PlaceOrderPage extends StatefulWidget {
   @override
@@ -13,7 +17,8 @@ class PlaceOrderPage extends StatefulWidget {
 class PlaceOrderPageState extends State<PlaceOrderPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   Completer<GoogleMapController> _controller = Completer();
-
+  GoogleMapController mapController;
+  Map<MarkerId, Marker> markers = <MarkerId, Marker>{};
   static final CameraPosition _kGooglePlex = CameraPosition(
     target: LatLng(37.42796133580664, -122.085749655962),
     zoom: 14.4746,
@@ -22,6 +27,29 @@ class PlaceOrderPageState extends State<PlaceOrderPage> {
   @override
   void initState() {
     super.initState();
+    SharedPreferences.getInstance().then((locationPickup)async{
+      var decode = jsonDecode(locationPickup.getString("pickupLocation"));
+      await Future.delayed(Duration(seconds: 2));
+      setState(() {
+        mapController.moveCamera(
+        CameraUpdate.newLatLng(
+          LatLng(decode["lat"], decode["lng"]),
+        ));
+      });
+      setState(() {
+        markers[MarkerId("345")] =Marker(
+          markerId: MarkerId("345"),
+          draggable: true,
+          position: LatLng(decode["lat"], decode["lng"]),
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueOrange,
+          ),
+          infoWindow:
+          InfoWindow(title: "Your Location", snippet: 'Pickup'),
+
+        );
+      });
+    });
   }
 
   @override
@@ -47,12 +75,32 @@ class PlaceOrderPageState extends State<PlaceOrderPage> {
                   height: MediaQuery.of(context).size.height,
                   width: MediaQuery.of(context).size.width,
                   child: GoogleMap(
+                    markers: Set<Marker>.of(markers.values),
                     mapType: MapType.normal,
                     initialCameraPosition: _kGooglePlex,
                     onMapCreated: (GoogleMapController controller) {
-                      _controller.complete(controller);
+                      mapController =  controller;
                     },
                   )),
+//              Container(
+//                height: 50.0,
+//                width: 50.0,
+//                margin: EdgeInsets.only(left: 10.0, top: 40),
+//                child: FittedBox(
+//                  child: FloatingActionButton(
+//                    onPressed: () {
+//                      _scaffoldKey.currentState.openDrawer();
+//                    },
+//                    child: Icon(
+//                      Icons.menu,
+//                      color: Colors.white,
+//                    ),
+//                    backgroundColor: Color.fromRGBO(64, 236, 120, 1.0),
+//                    shape: RoundedRectangleBorder(
+//                        borderRadius: BorderRadius.all(Radius.circular(16.0))),
+//                  ),
+//                ),
+//              ),
               Container(
                 height: 50.0,
                 width: 50.0,
@@ -60,15 +108,16 @@ class PlaceOrderPageState extends State<PlaceOrderPage> {
                 child: FittedBox(
                   child: FloatingActionButton(
                     onPressed: () {
-                      _scaffoldKey.currentState.openDrawer();
+                      Navigator.of(context).pop();
                     },
                     child: Icon(
-                      Icons.menu,
+                      Icons.chevron_left,
                       color: Colors.white,
+                      size: 40,
                     ),
                     backgroundColor: Color.fromRGBO(64, 236, 120, 1.0),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(16.0))),
+                        borderRadius: BorderRadius.all(Radius.circular(30.0))),
                   ),
                 ),
               ),

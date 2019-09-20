@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/rendering.dart';
+import 'package:moover/main.dart';
 
 // This app is a stateful, it tracks the user's current choice.
 class ProfilePage extends StatefulWidget {
@@ -68,14 +70,14 @@ class _ProfilePageState extends State<ProfilePage>
                           alignment: Alignment.bottomRight,
                         )),
                     Text(
-                      'Mikey Mechito',
+                      currentUserModel.username ?? "",
                       style: TextStyle(
                           fontSize: 16.0,
                           color: Colors.black,
                           fontWeight: FontWeight.bold),
                     ),
                     Text(
-                      '@mechitomike',
+                      currentUserModel.email ?? "",
                       style: TextStyle(
                         fontSize: 12.0,
                         color: Colors.grey,
@@ -102,7 +104,7 @@ class _ProfilePageState extends State<ProfilePage>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
                                 Text(
-                                  "Mikey Mechito",
+                                  currentUserModel.username ?? "",
                                   style: TextStyle(
                                       color: Colors.black54, fontSize: 18),
                                 ),
@@ -151,19 +153,19 @@ class _ProfilePageState extends State<ProfilePage>
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
-                                Row(
-                                  children: <Widget>[
-                                    Image.asset("assets/mail.png"),
-                                    SizedBox(
-                                      width: 5,
-                                    ),
-                                    Text(
-                                      "mustermail@muster.com",
-                                      style: TextStyle(
-                                          color: Colors.black54, fontSize: 18),
-                                    )
-                                  ],
-                                ),
+//                                Row(
+//                                  children: <Widget>[
+//                                    Image.asset("assets/mail.png"),
+//                                    SizedBox(
+//                                      width: 5,
+//                                    ),
+//                                    Text(
+//                                      currentUserModel.email ?? "",
+//                                      style: TextStyle(
+//                                          color: Colors.black54, fontSize: 18),
+//                                    )
+//                                  ],
+//                                ),
                                 Row(
                                   children: <Widget>[
                                     Image.asset("assets/call.png"),
@@ -171,7 +173,7 @@ class _ProfilePageState extends State<ProfilePage>
                                       width: 5,
                                     ),
                                     Text(
-                                      "+4917612345678",
+                                      currentUserModel.phone ?? "",
                                       style: TextStyle(
                                           color: Colors.black54, fontSize: 18),
                                     )
@@ -299,8 +301,6 @@ class _ProfilePageState extends State<ProfilePage>
                           onChanged: (v){},
                           value: false,
                           activeColor: Color.fromRGBO(32, 110, 65, 1.0),
-                          inactiveThumbColor: Color.fromRGBO(32, 110, 65, 1.0),
-
                           activeTrackColor: Colors.transparent,
                           inactiveTrackColor: Colors.transparent,
                         ),
@@ -312,7 +312,9 @@ class _ProfilePageState extends State<ProfilePage>
                 ],
               ),
               FlatButton(
-                  onPressed: () {},
+                  onPressed: () {
+
+                  },
                   child: Text(
                     "Account löschen",
                     style: TextStyle(

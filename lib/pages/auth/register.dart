@@ -173,138 +173,140 @@ class _RegisterState extends State<Register>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomPadding: false,
       key: _scaffoldKey,
+      backgroundColor: Color(0xfff40e878),
       body: Container(
         color: Color(0xfff40e878),
         child: Container(
             padding: EdgeInsets.only(left: 30, right: 30),
             child: Form(
               key: _formKey,
-              child: ListView(
-                children: <Widget>[
-                  Container(
-                    height: 120,
-                    width: 120,
-                    child: Image(image: AssetImage('assets/car-white.png')),
-                    margin: EdgeInsets.only(top: 100),
-                  ),
-                  SizedBox(
-                    height: 20,
-                  ),
-                  Container(
-                      padding: EdgeInsets.all(10),
-                      child: Column(children: <Widget>[
-                        _buildNameTextField(),
-                        SizedBox(
-                          height: 20,
-                        ),
-                        Row(
-                          children: <Widget>[
-                            CountryCodePicker(
-                              onChanged: (val) {
-                                _selected = val;
-                                print(val.name.toString());
-                                print(val.code.toString());
-                              },
-                              // Initial selection and favorite can be one of code ('IT') OR dial_code('+39')
-                              initialSelection: "DE",
-                              favorite: ['+39', 'FR'],
-                              // optional. Shows only country name and flag
-                              showCountryOnly: false,
-                              textStyle:
-                                  TextStyle(color: Colors.white, fontSize: 18),
-                            ),
-                            SizedBox(
-                              width: 10,
-                            ),
-                            Flexible(
-                                child: TextFormField(
-                              keyboardType: TextInputType.numberWithOptions(),
-                              decoration: InputDecoration(
-                                fillColor: Color(0xFFf7f6f6),
-                                filled: true,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12.0),
-                                ),
-                                hintText: '1234567',
-                                hintStyle: TextStyle(
-                                    color: Colors.grey[500],
-                                    fontSize: 18.0,
-                                    height: 1.6),
-                                contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 10.0, vertical: 5),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: <Widget>[
+                    Container(
+                      height: 120,
+                      width: 120,
+                      child: Image(image: AssetImage('assets/car-white.png')),
+                      margin: EdgeInsets.only(top: 100),
+                    ),
+                    SizedBox(
+                      height: 20,
+                    ),
+                    Container(
+                        padding: EdgeInsets.all(10),
+                        child: Column(children: <Widget>[
+                          _buildNameTextField(),
+                          SizedBox(
+                            height: 20,
+                          ),
+                          Row(
+                            children: <Widget>[
+                              CountryCodePicker(
+                                onChanged: (val) {
+                                  _selected = val;
+                                  print(val.name.toString());
+                                  print(val.code.toString());
+                                },
+                                // Initial selection and favorite can be one of code ('IT') OR dial_code('+39')
+                                initialSelection: "DE",
+                                favorite: ['+39', 'FR'],
+                                // optional. Shows only country name and flag
+                                showCountryOnly: false,
+                                textStyle:
+                                    TextStyle(color: Colors.white, fontSize: 18),
                               ),
-                              style: TextStyle(
-                                  height: 0.8,
-                                  color: Colors.black,
-                                  fontSize: 18.0),
-                              validator: (value) {
-                                if (int.tryParse(value) == null) {
-                                  return 'Kindly enter valid number';
-                                }
-                                return null;
-                              },
-                              onSaved: (val) {
-                                _num = val;
-                              },
-                            ))
-                          ],
-                        ),
-                        SizedBox(
-                          height: 20,
-                        ),
-                        userGender(),SizedBox(
-                          height: 20,
-                        ),
-//                        userCity(),
-                        SizedBox(
-                          height: 50,
-                        ),
-                        _progress
-                            ? Center(child: new CircularProgressIndicator())
-                            : Center(
-//                  padding: const EdgeInsets.symmetric(vertical: 16.0),
-                                child: FlatButton(
-                                  onPressed: () {
-                                    if (!_formKey.currentState.validate()) {
-                                      return;
-                                    }
-                                    setState(() {
-                                      _progress = true;
-                                    });
-
-                                    _formKey.currentState.save();
-
-                                    AuthModel()
-                                        .registerInfo(
-                                            location:
-                                                _selected.toCountryStringOnly(),
-                                            gender: _gender,
-                                            userName: _name,
-                                            phone: _selected.dialCode + _num,
-                                    lat: lat,
-                                      lng: lng
-                                    )
-                                        .then((res) {
-                                      setState(() {
-                                        _progress = false;
-                                      });
-                                      print(res);
-                                      if(res['success']){
-                                        Navigator.pushReplacementNamed(context, "/");
-                                      }else{
-                                        _showSnackBar(res['message']);
-                                      }
-                                    });
-                                  },
-                                  child: Text('Let\'s Start',
-                                      style: TextStyle(
-                                          color: Colors.white, fontSize: 18)),
+                              SizedBox(
+                                width: 10,
+                              ),
+                              Flexible(
+                                  child: TextFormField(
+                                keyboardType: TextInputType.numberWithOptions(),
+                                decoration: InputDecoration(
+                                  fillColor: Color(0xFFf7f6f6),
+                                  filled: true,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12.0),
+                                  ),
+                                  hintText: '1234567',
+                                  hintStyle: TextStyle(
+                                      color: Colors.grey[500],
+                                      fontSize: 18.0,
+                                      height: 1.6),
+                                  contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 10.0, vertical: 5),
                                 ),
-                              )
-                      ])),
-                ],
+                                style: TextStyle(
+                                    height: 0.8,
+                                    color: Colors.black,
+                                    fontSize: 18.0),
+                                validator: (value) {
+                                  if (int.tryParse(value) == null) {
+                                    return 'Kindly enter valid number';
+                                  }
+                                  return null;
+                                },
+                                onSaved: (val) {
+                                  _num = val;
+                                },
+                              ))
+                            ],
+                          ),
+                          SizedBox(
+                            height: 20,
+                          ),
+                          userGender(),SizedBox(
+                            height: 20,
+                          ),
+//                        userCity(),
+                          SizedBox(
+                            height: 50,
+                          ),
+                          _progress
+                              ? Center(child: new CircularProgressIndicator())
+                              : Center(
+//                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                                  child: FlatButton(
+                                    onPressed: () {
+                                      if (!_formKey.currentState.validate()) {
+                                        return;
+                                      }
+                                      setState(() {
+                                        _progress = true;
+                                      });
+
+                                      _formKey.currentState.save();
+
+                                      AuthModel()
+                                          .registerInfo(
+                                              location:
+                                                  _selected.toCountryStringOnly(),
+                                              gender: _gender,
+                                              userName: _name,
+                                              phone: _selected.dialCode + _num,
+                                      lat: lat,
+                                        lng: lng,
+                                      )
+                                          .then((res) {
+                                        setState(() {
+                                          _progress = false;
+                                        });
+                                        print(res);
+                                        if(res['success']){
+                                          Navigator.pushReplacementNamed(context, "/");
+                                        }else{
+                                          _showSnackBar(res['message']);
+                                        }
+                                      });
+                                    },
+                                    child: Text('Let\'s Start',
+                                        style: TextStyle(
+                                            color: Colors.white, fontSize: 18)),
+                                  ),
+                                )
+                        ])),
+                  ],
+                ),
               ),
             )),
       ),

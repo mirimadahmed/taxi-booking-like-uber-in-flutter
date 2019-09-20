@@ -1,6 +1,11 @@
+import 'dart:convert';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:country_code_picker/country_code_picker.dart';
-
+import 'package:moover/models/userModel.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:moover/main.dart';
 // This app is a stateful, it tracks the user's current choice.
 class Profile2Page extends StatefulWidget {
   @override
@@ -10,17 +15,21 @@ class Profile2Page extends StatefulWidget {
 class _Profile2PageState extends State<Profile2Page>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
   var _selected;
-
+  bool update = false;
+String _num;
   @override
   void initState() {
     super.initState();
+
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
+        key: _scaffoldKey,
         appBar: AppBar(
           elevation: 0.0,
           centerTitle: true,
@@ -53,19 +62,19 @@ class _Profile2PageState extends State<Profile2Page>
               Container(
                   padding: EdgeInsets.all(10),
                   child: Column(children: <Widget>[
-                    TextFormField(
-                      decoration: const InputDecoration(
-                          hintText: 'mustermail@muster.com',
-//                    labelText: 'mustermail@muster.com',
-//                    labelStyle: TextStyle(color: Colors.black),
-                          contentPadding: EdgeInsets.all(0.0)),
-                      validator: (value) {
-                        if (value.isEmpty) {
-                          return 'Enter some text';
-                        }
-                        return null;
-                      },
-                    ),
+//                    TextFormField(
+//                      decoration: const InputDecoration(
+//                          hintText: 'mustermail@muster.com',
+////                    labelText: 'mustermail@muster.com',
+////                    labelStyle: TextStyle(color: Colors.black),
+//                          contentPadding: EdgeInsets.all(0.0)),
+//                      validator: (value) {
+//                        if (value.isEmpty) {
+//                          return 'Enter some text';
+//                        }
+//                        return null;
+//                      },
+//                    ),
                     SizedBox(
                       height: 10,
                     ),
@@ -83,7 +92,7 @@ class _Profile2PageState extends State<Profile2Page>
                             child: TextFormField(
                           keyboardType: TextInputType.numberWithOptions(),
                           decoration:
-                              const InputDecoration(hintText: "17612345678"
+                              const InputDecoration(hintText: "00000"
 //                    labelText: 'Mechito',
 //                    labelStyle: TextStyle(color: Colors.black),
 //                    contentPadding: EdgeInsets.all(0.0),
@@ -91,11 +100,16 @@ class _Profile2PageState extends State<Profile2Page>
 
                                   ),
                           validator: (value) {
-                            if (value.isEmpty) {
+                            if (int.tryParse(value) == null) {
                               return 'Enter some text';
                             }
                             return null;
                           },
+                              onSaved: (val){
+                            setState(() {
+                              _num = val;
+                            });
+                              },
                         ))
                       ],
                     ),
@@ -104,16 +118,40 @@ class _Profile2PageState extends State<Profile2Page>
                     ),
                     Center(
 //                  padding: const EdgeInsets.symmetric(vertical: 16.0),
-                      child: FlatButton(
-                        onPressed: () {
+                      child: update ?
+                      CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Color.fromRGBO(32,110,65,1.0)),
+                      ): FlatButton(
+                        onPressed: () async{
                           // Validate returns true if the form is valid, or false
                           // otherwise.
+                          print("update number");
+                          print(_num);
+
                           if (_formKey.currentState.validate()) {
+                            _formKey.currentState.save();
+                            setState(() {
+                              update = true;
+                            });
                             // If the form is valid, display a Snackbar.
-                            Scaffold.of(context).showSnackBar(SnackBar(
-                                content: Text(
-                              'Processing Data',
-                            )));
+                            final SharedPreferences prefs = await SharedPreferences.getInstance();
+                            CollectionReference snapshot = Firestore.instance.collection("riders");
+                            print("snapshot.document(currentUserModel.id)");
+                            await snapshot.document(currentUserModel.id).updateData({
+                              "phone" : _num != null ? _num : currentUserModel.phone,
+                            }).then((res)async{
+                              DocumentSnapshot userRecord = await Firestore.instance.collection('riders').document(currentUserModel.id).get();
+                              prefs.setString("user", jsonEncode(userRecord.data));
+                              currentUserModel =  User.fromDocument(userRecord);
+
+                              setState(() {
+                                update = false;
+                              });
+                              _showSnackBar("Phone number updated successfully");
+                            }).catchError((err){
+                              print("phone update err");
+                              _showSnackBar("Some thing went wrong contact adminstrator");
+                            });
                           }
                         },
                         child: Text('Speichern',
@@ -128,5 +166,12 @@ class _Profile2PageState extends State<Profile2Page>
         )),
       ),
     );
+  }
+  void _showSnackBar(message) {
+    _scaffoldKey.currentState.showSnackBar(SnackBar(
+      backgroundColor: Color.fromRGBO(32,110,65,1.0),
+      content: Text(message),
+      duration: Duration(seconds: 5),
+    ));
   }
 }

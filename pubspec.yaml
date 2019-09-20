@@ -29,7 +29,10 @@ dependencies:
   geolocator:
   http:
   cloud_firestore:
-
+  geocoder:
+  page_transition:
+  dio:
+  intl:
 dev_dependencies:
   flutter_test:
     sdk: flutter

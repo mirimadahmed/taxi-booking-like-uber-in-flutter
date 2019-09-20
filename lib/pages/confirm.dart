@@ -1,7 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:moover/widgets/drawer.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:async';
+import 'package:geocoder/geocoder.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ConfirmPage extends StatefulWidget {
   @override
@@ -13,20 +17,64 @@ class ConfirmPage extends StatefulWidget {
 class ConfirmPageState extends State<ConfirmPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   Completer<GoogleMapController> _controller = Completer();
-
+  GoogleMapController mapController;
+  Map<MarkerId,Marker> markers = <MarkerId,Marker>{};
   static final CameraPosition _kGooglePlex = CameraPosition(
     target: LatLng(37.42796133580664, -122.085749655962),
     zoom: 14.4746,
   );
-
+  String DestAsddress;
+  var first;
   @override
   void initState() {
     super.initState();
+    SharedPreferences.getInstance().then((picupLocation)async{
+      var decode = jsonDecode(picupLocation.getString("pickupLocation"));
+      var dest = jsonDecode(picupLocation.getString("destLocation"));
+      print("dest : $dest");
+      setState(() {
+        DestAsddress = dest["address"];
+      });
+      await Future.delayed(Duration(seconds: 2));
+      setState(() {
+        mapController.moveCamera(
+          CameraUpdate.newLatLng(
+            LatLng(decode["lat"], decode["lng"]),
+          ),
+        );
+      });
+      setState(() {
+        markers[MarkerId("345")] =Marker(
+          markerId: MarkerId("345"),
+          draggable: true,
+          position: LatLng(decode["lat"], decode["lng"]),
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueOrange,
+          ),
+          infoWindow:
+          InfoWindow(title: "Your Location", snippet: 'Pickup'),
+
+        );
+      });
+      final coordinates = new Coordinates(
+          decode["lat"], decode["lng"]);
+      var addresses = await Geocoder.local.findAddressesFromCoordinates(
+          coordinates);
+      setState(() {
+        first = addresses.first;
+      });
+
+      print("PickupLocation Address");
+      print(' ${first.locality}, ${first.adminArea},${first.subLocality}, ${first.subAdminArea},${first.addressLine}, ${first.featureName},${first.thoroughfare}, ${first.subThoroughfare}');
+
+      return first;
+    });
   }
 
   @override
   void dispose() {
     // TODO: implement dispose
+    super.dispose();
 
   }
 
@@ -42,7 +90,9 @@ class ConfirmPageState extends State<ConfirmPage> {
               Icons.arrow_back,
               color: Color.fromRGBO(64, 236, 120, 1.0),
             ),
-            onPressed: () {}),
+            onPressed: () {
+              Navigator.of(context).pop();
+            }),
         elevation: 0,
       ),
       key: _scaffoldKey,
@@ -56,11 +106,12 @@ class ConfirmPageState extends State<ConfirmPage> {
                   height: MediaQuery.of(context).size.height,
                   width: MediaQuery.of(context).size.width,
                   child: GoogleMap(
+                    markers: Set<Marker>.of(markers.values),
                     mapType: MapType.normal,
                     initialCameraPosition: _kGooglePlex,
-                    onMapCreated: (GoogleMapController controller) {
-                      _controller.complete(controller);
-                    },
+                      onMapCreated: (GoogleMapController controller) {
+                        mapController=controller;
+                      },
                   )),
               Container(
                 margin: EdgeInsets.symmetric(horizontal: 20),
@@ -102,12 +153,16 @@ class ConfirmPageState extends State<ConfirmPage> {
                                       color: Color.fromRGBO(112, 112, 112, 1),
                                       fontSize: 12),
                                 ),
-                                Text(
-                                  "Ikea Ottobrunn",
+                               first == null ? Container() :
+                               Container(
+                                 width: 200,
+                                   child:Text(
+                                  "${first.locality}, ${first.thoroughfare ?? ""} ${first.subLocality}",
                                   style: TextStyle(
                                       color: Color.fromRGBO(112, 112, 112, 1),
                                       fontSize: 16),
-                                )
+                                 overflow: TextOverflow.ellipsis,
+                                ))
                               ],
                             ),
                             Expanded(child: Container()),
@@ -134,22 +189,27 @@ class ConfirmPageState extends State<ConfirmPage> {
                             SizedBox(
                               width: 15,
                             ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <Widget>[
-                                Text(
-                                  "Destination Location",
-                                  style: TextStyle(
-                                      color: Color.fromRGBO(112, 112, 112, 1),
-                                      fontSize: 12),
-                                ),
-                                Text(
-                                  "Hauptbahnhof",
-                                  style: TextStyle(
-                                      color: Color.fromRGBO(112, 112, 112, 1),
-                                      fontSize: 16),
-                                )
-                              ],
+                            Container(
+                              width: 200,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  Text(
+                                    "Destination Location",
+                                    style: TextStyle(
+                                        color: Color.fromRGBO(112, 112, 112, 1),
+                                        fontSize: 12),
+                                  ),
+                                  Text(
+                                    DestAsddress ?? "",
+                                    style: TextStyle(
+                                        color: Color.fromRGBO(112, 112, 112, 1),
+                                        fontSize: 16),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  )
+                                ],
+                              ),
                             ),
                             Expanded(child: Container()),
                             Icon(

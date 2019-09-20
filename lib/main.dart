@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:fluro/fluro.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -47,25 +49,40 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+
   String id;
+  autoAuthenticate() async{
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    var response;
+    if(prefs.getString("user")!=null)
+      response = jsonDecode(prefs.getString("user"));
+    if(response != null){
+      setState(() {
+        currentUserModel =  User.fromMap(response);
+        print("currentUserModel");
+        print(currentUserModel.username);
+      });
+    }
+
+
+    SharedPreferences.getInstance().then((res){
+      print("resres");
+      print(res.get("id"));
+      setState(() {
+        id = res.get("id");
+      });
+    });
+  }
   @override
   void initState() {
     super.initState();
-    _getUserUID().then((res){
-      setState(() {
-        id = res;
-      });
-      print(res);
-    });
-    _removeLocationPrefs().then((res){
-      print("picup Location removed");
-      print(res);
-    });
+    autoAuthenticate();
+//    _removeLocationPrefs().then((res){
+//      print("picup Location removed");
+//      print(res);
+//    });
   }
-  _getUserUID()async{
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString("id");
-  }
+
   _removeLocationPrefs()async{
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.remove("pickupLocation");
@@ -179,6 +196,7 @@ class _MyAppState extends State<MyApp> {
 
     return MaterialApp(
         debugShowCheckedModeBanner: false,
+//        home: ChooseTransportPage(),
         theme: ThemeData(
           hintColor: Colors.grey,
           primaryColor: Colors.grey[100],

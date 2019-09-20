@@ -19,7 +19,7 @@ class CustomListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return
       Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5.0),
+      padding: const EdgeInsets.symmetric(vertical: 10.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -69,7 +69,7 @@ class _DriversDescription extends StatelessWidget {
           Container(
             padding: EdgeInsets.fromLTRB(20.0, 5, 0.0, 0.0),
             child:Text(
-              timeTitle,
+              timeTitle ?? "",
               style: const TextStyle(
                 fontSize: 14,
                 color: Color.fromRGBO(32,110,65,1.0),
@@ -77,7 +77,7 @@ class _DriversDescription extends StatelessWidget {
             ),
           ),
           const Padding(
-              padding: EdgeInsets.symmetric(vertical: 6.0),
+              padding: EdgeInsets.symmetric(vertical: 2.0),
 
           ),
         Container(
@@ -102,7 +102,7 @@ class _DriversDescription extends StatelessWidget {
             ),
 
           ),
-          const Padding(padding: EdgeInsets.symmetric(vertical: 10.0)),
+          const Padding(padding: EdgeInsets.symmetric(vertical: 5.0)),
 //        Flexible(),
         Container(
           padding: EdgeInsets.fromLTRB(10, 0.0, 0.0, 0.0),

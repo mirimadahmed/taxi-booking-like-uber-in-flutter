@@ -1,5 +1,5 @@
 import 'dart:convert';
-
+import 'package:geolocator/geolocator.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -110,6 +110,23 @@ class StandardScreenPageState extends State<StandardScreenPage> {
   @override
   void initState() {
     super.initState();
+    var geolocator = Geolocator();
+    print("callled");
+    var locationOptions = LocationOptions(accuracy: LocationAccuracy.high, distanceFilter: 10);
+
+//    StreamSubscription<Position> positionStream = geolocator.getPositionStream(locationOptions).listen(
+//            (Position position) {
+//              setState(() {
+//                mapController.moveCamera(
+//                  CameraUpdate.newLatLng(
+//                    LatLng(position.latitude, position.longitude),
+//                  ),
+//                );
+//              });
+//              print("fastest 1");
+//          print(position == null ? 'Unknown  ' : position.latitude.toString() + ', ' + position.longitude.toString());
+//        });
+
       getUserLocation().then((currentLocations)async{
         print("current location");
         print(currentLocations.latitude);
@@ -128,30 +145,31 @@ class StandardScreenPageState extends State<StandardScreenPage> {
               LatLng(currentLocations.latitude, currentLocations.longitude),
             ),
           );
-          markers[MarkerId("345")] = Marker(
-            markerId: MarkerId("345"),
-            draggable: true,
-            position: LatLng(currentLocations.latitude, currentLocations.longitude),
-            icon: BitmapDescriptor.defaultMarkerWithHue(
-              BitmapDescriptor.hueOrange,
-            ),
-            infoWindow:
-            InfoWindow(title: "Your Location", snippet: 'Pickup'),
-            onTap: () => _onMarkerTapped(
-              MarkerId("345"),
-            ),
-          );
+//          markers[MarkerId("345")] = Marker(
+//            markerId: MarkerId("345"),
+//            draggable: true,
+//            position: LatLng(currentLocations.latitude, currentLocations.longitude),
+//            icon: BitmapDescriptor.defaultMarkerWithHue(
+//              BitmapDescriptor.hueOrange,
+//            ),
+//            infoWindow:
+//            InfoWindow(title: "Your Location", snippet: 'Pickup'),
+//            onTap: () => _onMarkerTapped(
+//              MarkerId("345"),
+//            ),
+//          );
         });
       });
 
-    _getUserData().then((data){
-      print("user data");
-      var dta = jsonDecode(data);
-      setState(() {
-        username = dta["username"];
-      });
-      print(dta["username"]);
-    });
+//    _getUserData().then((data){
+//      print("user data");
+//      var dta = jsonDecode(data);
+//      setState(() {
+//        username = dta["username"];
+//      });
+//      print(dta["username"]);
+//    });
+
   }
 
   @override
@@ -160,6 +178,7 @@ class StandardScreenPageState extends State<StandardScreenPage> {
     super.dispose();
   }
 
+  double val = 200;
   @override
   Widget build(BuildContext context) {
     Orientation orientation = MediaQuery.of(context).orientation;
@@ -205,6 +224,7 @@ class StandardScreenPageState extends State<StandardScreenPage> {
                 ),
               ),
               Positioned(
+//                duration: Duration(milliseconds: 500),
                   bottom: 0,
                   child: Container(
                     decoration: BoxDecoration(
@@ -218,19 +238,28 @@ class StandardScreenPageState extends State<StandardScreenPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Center(
-                          child: Container(
-                            height: 2,
-                            width: 30,
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10),
-                                color: Color.fromRGBO(247, 247, 247, 1)),
+                          child: InkWell(
+                            onTap: (){
+                              print("onTap");
+                              setState(() {
+                                val = val == 200 ? 0 : 200;
+                              });
+                            },
+                            child: Container(
+                              padding: EdgeInsets.symmetric(horizontal: 200),
+                              height: 2,
+                              width: 30,
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  color: Color.fromRGBO(247, 247, 247, 1)),
+                            ),
                           ),
                         ),
                         SizedBox(
                           height: 10,
                         ),
                         Text(
-                          "Hello "+username+"!",
+                          "Hello ${currentUserModel.username}!",
                           style: TextStyle(color: Colors.white),
                         ),
                         Text(

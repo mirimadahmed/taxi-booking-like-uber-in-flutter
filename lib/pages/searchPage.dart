@@ -1,6 +1,10 @@
 import 'dart:convert';
-
+import 'dart:io';
+import 'package:dio/dio.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:geocoder/geocoder.dart';
+import 'package:geocoder/model.dart';
 import 'package:moover/widgets/drawer.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -13,10 +17,9 @@ import 'package:flutter/services.dart';
 //import 'package:simple_permissions/simple_permissions.dart';
 import '../main.dart';
 import '../models/authModel.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_webservice/places.dart';
 import 'package:flutter_google_places/flutter_google_places.dart';
-
+import 'package:http/http.dart' as http;
 class SearchPage extends StatefulWidget {
   @override
   State<StatefulWidget> createState() {
@@ -144,6 +147,28 @@ class SearchPageState extends State<SearchPage> {
     }
   }
 
+  var picUpAddress = "";
+  getAddressFromLatLng(String lat,String lng)async{
+    print("latlng");
+    print(lat);
+    print(lng);
+    try{
+//      var response = await http.get("https://maps.godogleapis.com/maps/api/geocode/json?latlng=$lat,$lng&key=AIzaSyCUqW52AXRmuPzQghI877RFrjXHTxCjfkE",);
+      var response = await http.get("https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lng&key=AIzaSyCUqW52AXRmuPzQghI877RFrjXHTxCjfkE",);
+      if(response.statusCode.toString() == "200"){
+        print("res address");
+        var decode = jsonDecode(response.body);
+        print(decode["results"][0]["formatted_address"]);
+        setState(() {
+          picUpAddress = decode["results"][0]["formatted_address"];
+        });
+      }
+
+    }catch(e){
+      print(e);
+    }
+  }
+
   getUserLocation() async {
     var myLocation;
     String error;
@@ -192,23 +217,27 @@ class SearchPageState extends State<SearchPage> {
 //      );
 //    });
   }
-
+ var first;
   @override
   void initState() {
     super.initState();
-
-    getPicupLatLng().then((res){
-      var decode = jsonDecode(res);
+    SharedPreferences.getInstance().then((picupLocation)async{
+      var decode = jsonDecode(picupLocation.getString("pickupLocation"));
       setState(() {
+        setState(() {
         pLocation = LatLng(decode["lat"], decode["lng"]);
       });
+      });
+      await Future.delayed(Duration(seconds: 2));
       setState(() {
         mapController.moveCamera(
           CameraUpdate.newLatLng(
             LatLng(decode["lat"], decode["lng"]),
-            ),
-          );
-        markers[MarkerId("345")] = Marker(
+          ),
+        );
+      });
+      setState(() {
+        markers[MarkerId("345")] =Marker(
           markerId: MarkerId("345"),
           draggable: true,
           position: LatLng(decode["lat"], decode["lng"]),
@@ -217,13 +246,50 @@ class SearchPageState extends State<SearchPage> {
           ),
           infoWindow:
           InfoWindow(title: "Your Location", snippet: 'Pickup'),
-          onTap: () => _onMarkerTapped(
-            MarkerId("345"),
-          ),
-        );
 
+        );
       });
+      await getAddressFromLatLng(decode["lat"].toString(), decode["lng"].toString());
     });
+
+//    getPicupLatLng().then((res)async{
+//      var decode = jsonDecode(res);
+//      setState(() {
+//        pLocation = LatLng(decode["lat"], decode["lng"]);
+//      });
+//      await Future.delayed(Duration(seconds: 2));
+//      setState(() {
+//        mapController.moveCamera(
+//          CameraUpdate.newLatLng(
+//            LatLng(decode["lat"], decode["lng"]),
+//            ),
+//          );
+//        markers[MarkerId("345")] = Marker(
+//          markerId: MarkerId("345"),
+//          draggable: true,
+//          position: LatLng(decode["lat"], decode["lng"]),
+//          icon: BitmapDescriptor.defaultMarkerWithHue(
+//            BitmapDescriptor.hueOrange,
+//          ),
+//          infoWindow:
+//          InfoWindow(title: "Your Location", snippet: 'Pickup'),
+//          onTap: () => _onMarkerTapped(
+//            MarkerId("345"),
+//          ),
+//        );
+//
+//      });
+//      final coordinates = new Coordinates(
+//          decode["lat"], decode["lng"]);
+//      var addresses = await Geocoder.local.findAddressesFromCoordinates(
+//          coordinates);
+//      setState(() {
+//        first = addresses.first;
+//      });
+//
+//      print("PickupLocation Address");
+//      print(' ${first.locality}, ${first.adminArea},${first.subLocality}, ${first.subAdminArea},${first.addressLine}, ${first.featureName},${first.thoroughfare}, ${first.subThoroughfare}');
+//    });
 
 
 //    try{
@@ -262,7 +328,6 @@ class SearchPageState extends State<SearchPage> {
   }
 
   getPicupLatLng()async{
-    await Future.delayed(Duration(seconds: 3));
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString("pickupLocation");
   }
@@ -316,7 +381,7 @@ super.dispose();
                     myLocationButtonEnabled: true,
                     mapType: MapType.normal,
                     initialCameraPosition: CameraPosition(
-                      target: LatLng(33.7159, 73.0655),
+                      target: LatLng(31.7159, 73.0655),
                       zoom:zoom,
                     ),
                     markers: Set<Marker>.of(markers.values),
@@ -388,7 +453,8 @@ super.dispose();
                           Map destUser = Map();
                           destUser = {
                             "lat" : v["latitude"],
-                            "lng" : v["longitude"]
+                            "lng" : v["longitude"],
+                            "address" : v["address"]
                           };
                           print("destuser");
                           print(destUser);
@@ -478,16 +544,20 @@ super.dispose();
                             color:
                             Color.fromRGBO(64, 236, 120, 1.0),),child:
                     GestureDetector(
-                            onTap: () {
+                            onTap: () async{
                               setState(() {
                                 progress = true;
                               });
+                              print("rides for user");
+                              print(currentUserModel.id);
                               Firestore.instance.collection("rides").add({
+                                "userId": currentUserModel.id,
                                 "city":currentUserModel.city,
-                                "destination":{"address":loacationAddress,"lat":destination.latitude,"long":destination.longitude}
-                             , "driver":{},
+                                "destination":{"address":loacationAddress,"lat":destination.latitude,"long":destination.longitude},
+                                "driver":{},
                                 "pickup":{
-                                  "address":"Rider Location",
+//                                  "address":"${first.locality ?? ""}, ${first.thoroughfare ?? ""} ${first.subLocality ?? ""}",
+                                  "address":picUpAddress,
                                   "lat":pLocation.latitude,
                                   "long":pLocation.longitude
                                 },
@@ -498,8 +568,10 @@ super.dispose();
                                 setState(() {
                                   progress = false;
                                 });
-                              Navigator.pushNamed(
-                                context, "/destination");
+//                              Navigator.pushNamed(
+//                                context, "/destination");
+                              Navigator.pushReplacementNamed(
+                                context, "/transport");
                               });
                             },
 
