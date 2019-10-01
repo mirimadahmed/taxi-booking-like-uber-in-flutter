@@ -85,9 +85,9 @@ class ChooseTransportPageState extends State<ChooseTransportPage> {
             return Center(child: const Text('Loading...'));
           }
           return Container(
-              height: MediaQuery.of(context).size.height,
-              width: MediaQuery.of(context).size.width,
-              color: Colors.white,
+                height: MediaQuery.of(context).size.height,
+                width: MediaQuery.of(context).size.width,
+                color: Colors.white,
               child: Stack(
                 children: <Widget>[
                   Container(
