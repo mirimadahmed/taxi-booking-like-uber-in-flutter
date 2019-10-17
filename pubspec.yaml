@@ -33,7 +33,7 @@ dependencies:
   page_transition:
   dio:
   intl:
-  background_location:
+  flutter_share:
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -30,6 +30,17 @@ import './pages/rate.dart';
 import './pages/auth/register.dart';
 import './models/userModel.dart';
 import 'pages/get_reset_link.dart';
+import 'package:google_maps_webservice/places.dart';
+
+
+
+const kGoogleApiKey = "AIzaSyB81xMeMewP3-P3KyUloVMJnvVEhgfHgrI";
+
+GoogleMapsPlaces places = GoogleMapsPlaces(apiKey: kGoogleApiKey);
+
+final searchScaffoldKey = GlobalKey<ScaffoldState>();
+
+
 
 void main() {
 //  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
@@ -115,7 +126,7 @@ class _MyAppState extends State<MyApp> {
     }));
     router.define('/profile4', handler: Handler(
         handlerFunc: (BuildContext context, Map<String, dynamic> params) {
-      return Profile4Page();
+      return ZuhausePage();
     }));
     router.define('/rides', handler: Handler(
         handlerFunc: (BuildContext context, Map<String, dynamic> params) {

@@ -1,24 +1,23 @@
 import 'dart:convert';
-import 'package:background_location/background_location.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:moover/pages/searchPage.dart';
+import 'package:page_transition/page_transition.dart';
 import 'dart:async';
 import '../widgets/network.dart';
-import '../widgets/route.dart';
 import 'package:location/location.dart' as loc;
 import 'package:flutter/services.dart';
 import '../main.dart';
-import '../models/authModel.dart';
 import 'package:google_maps_webservice/places.dart';
 import 'package:flutter_google_places/flutter_google_places.dart';
 import '../widgets/drawer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+
 const kGoogleApiKey = "AIzaSyB81xMeMewP3-P3KyUloVMJnvVEhgfHgrI";
-GoogleMapsPlaces _places = GoogleMapsPlaces(apiKey: kGoogleApiKey);
-final _searchScaffoldKey = GlobalKey<ScaffoldState>();
+
 class StandardScreenPage extends StatefulWidget {
   @override
   State<StatefulWidget> createState() {
@@ -179,7 +178,7 @@ class StandardScreenPageState extends State<StandardScreenPage> {
     super.dispose();
   }
 
-  double val = 200;
+  double val = -200;
   @override
   Widget build(BuildContext context) {
     Orientation orientation = MediaQuery.of(context).orientation;
@@ -224,9 +223,108 @@ class StandardScreenPageState extends State<StandardScreenPage> {
                   ),
                 ),
               ),
-              Positioned(
-//                duration: Duration(milliseconds: 500),
-                  bottom: 0,
+              AnimatedPositioned(
+                duration: Duration(milliseconds: 500),
+                top: (MediaQuery.of(context).size.height * .2)/1.2,
+                left: 20,
+                right: 20,
+                child: GestureDetector(
+                  onTap: ()async{
+                    setState(() {
+                      val = -200;
+                    });
+                    final SharedPreferences prefs = await SharedPreferences.getInstance();
+                    print("ok");
+                    Prediction p = await PlacesAutocomplete.show(
+                      logo: Container(
+                        height: 1,
+                      ),
+                      context: context,
+                      apiKey: kGoogleApiKey,
+                      hint: "Hauptbahnhof",
+                      onError: (res) {
+                        _homeScaffoldKey.currentState.showSnackBar(
+                            SnackBar(content: Text(res.errorMessage)));
+                      },
+                      mode: _mode,
+                      language: "en",
+                      radius: 15000,
+//                          location: Location(currentLocation.latitude, currentLocation.longitude),
+
+                    );
+                    print("pppppp");
+                    print("$p");
+                    if(p != null){
+                      setState(() {
+                        val = 0;
+                      });
+                      FocusScope.of(context).requestFocus(FocusNode());
+                      displayPrediction(p, _scaffoldKey.currentState, context)
+                          .then((res){
+                        if(res != null)
+                          print("addressaddress");
+                        print(res["address"]);
+                        Map addresss = Map();
+                        addresss = {
+                          "lat" : res["latitude"],
+                          "lng" : res["longitude"],
+                        };
+                        print(addresss);
+                        var encode = jsonEncode(addresss);
+                        prefs.setString("pickupLocation", encode);
+                        setState(() {
+                          address = res["address"];
+                          loacationAddress = res["address"];
+                          destination = LatLng(res["latitude"], res["longitude"]);
+                          mapController.moveCamera(
+                            CameraUpdate.newLatLng(
+                              LatLng(res["latitude"], res["longitude"]),
+                            ),
+                          );
+
+                          markers[MarkerId("120")] = Marker(
+                            markerId: MarkerId("120"),
+                            draggable: true,
+                            position: LatLng(res["latitude"], res["longitude"]),
+                            icon: BitmapDescriptor.defaultMarkerWithHue(
+                              BitmapDescriptor.hueGreen,
+                            ),
+                            infoWindow:
+                            InfoWindow(title: "Picup location", snippet: '*'),
+                            onTap: () => _onMarkerTapped(
+                              MarkerId("120"),
+                            ),
+                          );
+                        });
+                      });
+                    }
+
+                  },
+                  child: Container(
+                    padding: EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: <Widget>[
+                        Text(
+                          "Hauptbahnhof",
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                        Icon(
+                          Icons.search,
+                          color: Colors.grey,
+                        )
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              AnimatedPositioned(
+                duration: Duration(milliseconds: 500),
+                  bottom: val,
                   child: Container(
                     decoration: BoxDecoration(
                         color: Color.fromRGBO(64, 236, 120, 1.0),
@@ -243,10 +341,11 @@ class StandardScreenPageState extends State<StandardScreenPage> {
                             onTap: (){
                               print("onTap");
                               setState(() {
-                                val = val == 200 ? 0 : 200;
+                                val = val == -200 ? 0 : -200;
                               });
                             },
                             child: Container(
+                              margin: EdgeInsets.symmetric(horizontal: 100, vertical: 5),
                               padding: EdgeInsets.symmetric(horizontal: 200),
                               height: 2,
                               width: 30,
@@ -281,73 +380,8 @@ class StandardScreenPageState extends State<StandardScreenPage> {
                                 borderRadius: BorderRadius.circular(10)),
                             filled: true,
                             fillColor: Colors.white,
-                            enabled: true,
+                            enabled: false,
                           ),
-                          onTap: ()async{
-                            final SharedPreferences prefs = await SharedPreferences.getInstance();
-                            print("ok");
-                            Prediction p = await PlacesAutocomplete.show(
-                              logo: Container(
-                                height: 1,
-                              ),
-                              context: context,
-                              apiKey: kGoogleApiKey,
-                              hint: "Hauptbahnhof",
-                              onError: (res) {
-                                _homeScaffoldKey.currentState.showSnackBar(
-                                    SnackBar(content: Text(res.errorMessage)));
-                              },
-                              mode: _mode,
-                              language: "en",
-                              radius: 15000,
-//                          location: Location(currentLocation.latitude, currentLocation.longitude),
-
-                            );
-                            print("pppppp");
-                            print("$p");
-                            if(p != null){
-                              displayPrediction(p, _scaffoldKey.currentState, context)
-                                  .then((res){
-                                if(res != null)
-                                  print("addressaddress");
-                                print(res["address"]);
-                                Map addresss = Map();
-                                addresss = {
-                                  "lat" : res["latitude"],
-                                  "lng" : res["longitude"],
-                                };
-                                print(addresss);
-                                var encode = jsonEncode(addresss);
-                                prefs.setString("pickupLocation", encode);
-                                setState(() {
-                                  address = res["address"];
-                                  loacationAddress = res["address"];
-                                  destination = LatLng(res["latitude"], res["longitude"]);
-                                  mapController.moveCamera(
-                                    CameraUpdate.newLatLng(
-                                      LatLng(res["latitude"], res["longitude"]),
-                                    ),
-                                  );
-
-                                  markers[MarkerId("120")] = Marker(
-                                    markerId: MarkerId("120"),
-                                    draggable: true,
-                                    position: LatLng(res["latitude"], res["longitude"]),
-                                    icon: BitmapDescriptor.defaultMarkerWithHue(
-                                      BitmapDescriptor.hueGreen,
-                                    ),
-                                    infoWindow:
-                                    InfoWindow(title: "Picup location", snippet: '*'),
-                                    onTap: () => _onMarkerTapped(
-                                      MarkerId("120"),
-                                    ),
-                                  );
-                                });
-                              });
-                            }
-
-
-                          },
                         ),
                         SizedBox(
                           height: 10,
@@ -370,8 +404,11 @@ class StandardScreenPageState extends State<StandardScreenPage> {
                                   )
                                 ],
                               ),
-                              onTap: () => Navigator.pushNamed(
-                                  context, "/search"),
+                              onTap: (){
+                                Navigator.of(context).push(PageTransition(type: PageTransitionType.rightToLeft, child: SearchPage(
+                                  zuhause: true,
+                                )));
+                              }
                             ),
                             GestureDetector(
                               child: Column(
@@ -388,8 +425,11 @@ class StandardScreenPageState extends State<StandardScreenPage> {
                                   )
                                 ],
                               ),
-                              onTap: () => Navigator.pushNamed(
-                                  context, "/search"),
+                              onTap: () {
+                                Navigator.of(context).push(PageTransition(type: PageTransitionType.rightToLeft, child: SearchPage(
+                                  crown: true,
+                                )));
+                              },
                             ),
                             GestureDetector(
                               child: Column(
@@ -406,8 +446,11 @@ class StandardScreenPageState extends State<StandardScreenPage> {
                                   )
                                 ],
                               ),
-                              onTap: () => Navigator.pushNamed(
-                                  context, "/search"),
+                              onTap: () {
+                                Navigator.of(context).push(PageTransition(type: PageTransitionType.rightToLeft, child: SearchPage(
+                                  casino: true,
+                                )));
+                              }
                             ),
                           ],
                         ),
@@ -428,7 +471,7 @@ class StandardScreenPageState extends State<StandardScreenPage> {
       Prediction p, ScaffoldState scaffold, BuildContext context) async {
     if (p != null) {
       // get detail (lat/lng)
-      PlacesDetailsResponse detail = await _places.getDetailsByPlaceId(p.placeId);
+      PlacesDetailsResponse detail = await places.getDetailsByPlaceId(p.placeId);
       final lat = detail.result.geometry.location.lat;
       final lng = detail.result.geometry.location.lng;
       final address = detail.result.formattedAddress;
@@ -441,3 +484,83 @@ class StandardScreenPageState extends State<StandardScreenPage> {
     }
   }
 }
+
+
+
+
+
+
+
+
+
+//
+//
+//
+//
+//
+//onTap: ()async{
+//final SharedPreferences prefs = await SharedPreferences.getInstance();
+//print("ok");
+//Prediction p = await PlacesAutocomplete.show(
+//logo: Container(
+//height: 1,
+//),
+//context: context,
+//apiKey: kGoogleApiKey,
+//hint: "Hauptbahnhof",
+//onError: (res) {
+//_homeScaffoldKey.currentState.showSnackBar(
+//SnackBar(content: Text(res.errorMessage)));
+//},
+//mode: _mode,
+//language: "en",
+//radius: 15000,
+////                          location: Location(currentLocation.latitude, currentLocation.longitude),
+//
+//);
+//print("pppppp");
+//print("$p");
+//if(p != null){
+//FocusScope.of(context).requestFocus(FocusNode());
+//displayPrediction(p, _scaffoldKey.currentState, context)
+//    .then((res){
+//if(res != null)
+//print("addressaddress");
+//print(res["address"]);
+//Map addresss = Map();
+//addresss = {
+//"lat" : res["latitude"],
+//"lng" : res["longitude"],
+//};
+//print(addresss);
+//var encode = jsonEncode(addresss);
+//prefs.setString("pickupLocation", encode);
+//setState(() {
+//address = res["address"];
+//loacationAddress = res["address"];
+//destination = LatLng(res["latitude"], res["longitude"]);
+//mapController.moveCamera(
+//CameraUpdate.newLatLng(
+//LatLng(res["latitude"], res["longitude"]),
+//),
+//);
+//
+//markers[MarkerId("120")] = Marker(
+//markerId: MarkerId("120"),
+//draggable: true,
+//position: LatLng(res["latitude"], res["longitude"]),
+//icon: BitmapDescriptor.defaultMarkerWithHue(
+//BitmapDescriptor.hueGreen,
+//),
+//infoWindow:
+//InfoWindow(title: "Picup location", snippet: '*'),
+//onTap: () => _onMarkerTapped(
+//MarkerId("120"),
+//),
+//);
+//});
+//});
+//}
+//
+//
+//},

@@ -22,13 +22,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.3.0"
-  background_location:
-    dependency: "direct main"
-    description:
-      name: background_location
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.0.7"
   boolean_selector:
     dependency: transitive
     description:
@@ -125,6 +118,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.2.3"
+  flutter_share:
+    dependency: "direct main"
+    description:
+      name: flutter_share
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.0.2+1"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -242,13 +242,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.8.0+1"
-  permission_handler:
-    dependency: transitive
-    description:
-      name: permission_handler
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "3.2.2"
   petitparser:
     dependency: transitive
     description:

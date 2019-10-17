@@ -1,8 +1,13 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_google_places/flutter_google_places.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:intl/intl.dart';
 import 'package:moover/main.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_maps_webservice/places.dart';
 // This app is a stateful, it tracks the user's current choice.
 class ProfilePage extends StatefulWidget {
   @override
@@ -11,9 +16,39 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage>
     with SingleTickerProviderStateMixin {
+
+
+  String address = "";
+  String address1 = "";
+  String address2 = "";
+  String loacationAddress = "Loading...";
+  LatLng destination;
+  Mode _mode = Mode.overlay;
+  final GlobalKey<ScaffoldState> _homeScaffoldKey = new GlobalKey<ScaffoldState>();
+  final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   @override
   void initState() {
     super.initState();
+    SharedPreferences.getInstance().then((res){
+      if(res.get("zuhause") != null){
+        var decode = jsonDecode(res.getString("zuhause"));
+        setState(() {
+          address = decode["address"];
+        });
+      }
+      if(res.get("crownClub") != null){
+        var decode1 = jsonDecode(res.getString("crownClub"));
+        setState(() {
+          address1 = decode1["address"];
+        });
+      }
+      if(res.get("casino") != null){
+        var decode2 = jsonDecode(res.getString("casino"));
+        setState(() {
+          address2 = decode2["address"];
+        });
+      }
+    });
   }
 
   @override
@@ -205,7 +240,7 @@ class _ProfilePageState extends State<ProfilePage>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(
-                          "Favoriten",
+                          "Zuhause",
                           style: TextStyle(
                               fontSize: 14,
                               color: Color.fromRGBO(32, 110, 65, 1.0)),
@@ -213,19 +248,105 @@ class _ProfilePageState extends State<ProfilePage>
                         SizedBox(
                           height: 5,
                         ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
                             Text(
-                              "Mein Adressbuch",
+                              address == "" ? "Mein Adressbuch" : address,
                               style: TextStyle(
                                   color: Colors.black54, fontSize: 18),
                             ),
-                            IconButton(
-                                icon: Icon(Icons.chevron_right),
-                                onPressed: () {
-                                  Navigator.pushNamed(context, "/profile3");
-                                })
+                            Align(
+                              alignment: Alignment.bottomRight,
+                              child: IconButton(
+                                  icon: Icon(Icons.chevron_right),
+                                  onPressed: () {
+                                    _zuhause(true,false,false);
+                                  }),
+                            )
+                          ],
+                        )
+                      ])),
+              Container(
+                height: 1,
+                color: Colors.grey,
+              ),
+              SizedBox(
+                height: 10,
+              ),
+              Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10),
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          "Crowns Club",
+                          style: TextStyle(
+                              fontSize: 14,
+                              color: Color.fromRGBO(32, 110, 65, 1.0)),
+                        ),
+                        SizedBox(
+                          height: 5,
+                        ),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text(
+                        address1 == "" ? "Adressbuch" : address1,
+                              style: TextStyle(
+                                  color: Colors.black54, fontSize: 18),
+                            ),
+                            Align(
+                              alignment: Alignment.bottomRight,
+                              child: IconButton(
+                                  icon: Icon(Icons.chevron_right),
+                                  onPressed: () {
+                                    _zuhause(false,true,false);
+                                  }),
+                            )
+                          ],
+                        )
+                      ])),
+              Container(
+                height: 1,
+                color: Colors.grey,
+              ),
+              SizedBox(
+                height: 10,
+              ),
+              Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10),
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          "Filmcasino",
+                          style: TextStyle(
+                              fontSize: 14,
+                              color: Color.fromRGBO(32, 110, 65, 1.0)),
+                        ),
+                        SizedBox(
+                          height: 5,
+                        ),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text(
+                              address2 == "" ? "Adressbuch" : address2,
+                              style: TextStyle(
+                                  color: Colors.black54, fontSize: 18),
+                            ),
+                            Align(
+                              alignment: Alignment.bottomRight,
+                              child: IconButton(
+                                  icon: Icon(Icons.chevron_right),
+                                  onPressed: () {
+                                    _zuhause(false,false,true);
+                                  }),
+                            )
                           ],
                         )
                       ])),
@@ -264,7 +385,7 @@ class _ProfilePageState extends State<ProfilePage>
                             IconButton(
                                 icon: Icon(Icons.chevron_right),
                                 onPressed: () {
-                                  Navigator.pushNamed(context, "/profile4");
+                                  Navigator.pushNamed(context, "/profile3");
                                 })
                           ],
                         )
@@ -344,4 +465,99 @@ class _ProfilePageState extends State<ProfilePage>
       ),
     );
   }
+
+  _zuhause(bool zuhause, bool crownClub, bool casino)async{
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    print("ok");
+    Prediction p = await PlacesAutocomplete.show(
+      logo: Container(
+        height: 1,
+      ),
+      context: context,
+      apiKey: kGoogleApiKey,
+      hint: "Hauptbahnhof",
+      onError: (res) {
+        _homeScaffoldKey.currentState.showSnackBar(
+            SnackBar(content: Text(res.errorMessage)));
+      },
+      mode: _mode,
+      language: "en",
+      radius: 15000,
+//                          location: Location(currentLocation.latitude, currentLocation.longitude),
+
+    );
+    print("pppppp");
+    print("$p");
+    if(p != null){
+      displayPrediction(p, _scaffoldKey.currentState, context)
+          .then((res){
+        if(res != null)
+          print("addressaddress");
+        print(res["address"]);
+        Map addresss = Map();
+        if(zuhause == true){
+          addresss = {
+            "lat" : res["latitude"],
+            "lng" : res["longitude"],
+            "address" : res["address"],
+          };
+          var encode = jsonEncode(addresss);
+          prefs.setString("zuhause", encode);
+        }
+        else if(crownClub == true){
+          addresss = {
+            "lat" : res["latitude"],
+            "lng" : res["longitude"],
+            "address" : res["address"],
+          };
+          var encode = jsonEncode(addresss);
+          prefs.setString("crownClub", encode);
+        }
+        else{
+          addresss = {
+            "lat" : res["latitude"],
+            "lng" : res["longitude"],
+            "address" : res["address"],
+          };
+          var encode = jsonEncode(addresss);
+          prefs.setString("casino", encode);
+        }
+
+        if(zuhause == true){
+          setState(() {
+            address = res["address"];
+          });
+        }else if(crownClub == true){
+          setState(() {
+            address1 = res["address"];
+          });
+        } else{
+          setState(() {
+            address2 = res["address"];
+          });
+        }
+
+      });
+    }
+
+  }
+
+
+  Future displayPrediction(
+      Prediction p, ScaffoldState scaffold, BuildContext context) async {
+    if (p != null) {
+      // get detail (lat/lng)
+      PlacesDetailsResponse detail = await places.getDetailsByPlaceId(p.placeId);
+      final lat = detail.result.geometry.location.lat;
+      final lng = detail.result.geometry.location.lng;
+      final address = detail.result.formattedAddress;
+      print("AddressAddress");
+      print(address);
+      print(lat);
+      print(lng);
+
+      return {"latitude": lat, "longitude": lng, "address": address};
+    }
+  }
+
 }

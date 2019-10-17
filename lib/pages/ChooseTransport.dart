@@ -13,6 +13,8 @@ import 'package:moover/widgets/network.dart';
 import 'package:moover/widgets/route.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+
+const kGoogleApiKey = "AIzaSyB81xMeMewP3-P3KyUloVMJnvVEhgfHgrI";
 class ChooseTransportPage extends StatefulWidget {
   @override
   State<StatefulWidget> createState() {

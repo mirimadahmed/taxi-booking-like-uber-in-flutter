@@ -20,7 +20,11 @@ import '../models/authModel.dart';
 import 'package:google_maps_webservice/places.dart';
 import 'package:flutter_google_places/flutter_google_places.dart';
 import 'package:http/http.dart' as http;
+
+
 class SearchPage extends StatefulWidget {
+  final bool zuhause, crown, casino;
+  SearchPage({this.zuhause,this.casino,this.crown});
   @override
   State<StatefulWidget> createState() {
     return SearchPageState();
@@ -42,6 +46,7 @@ class SearchPageState extends State<SearchPage> {
   loc.LocationData currentLocation;
   LatLng destination;
   LatLng pLocation;
+  LatLng dLocation;
   bool point = false;
   bool progress = false;
 
@@ -190,34 +195,9 @@ class SearchPageState extends State<SearchPage> {
     }
     print("Location of my : ${myLocation}");
     return myLocation;
-//    currentLocation = myLocation;
-//
-//
-//    print("raxi");
-//    return currentLocation;
-
-//    setState(() {
-//      mapController.moveCamera(
-//        CameraUpdate.newLatLng(
-//          LatLng(currentLocation.latitude, currentLocation.longitude),
-//        ),
-//      );
-//      markers[MarkerId("345")] = Marker(
-//        markerId: MarkerId("345"),
-//        draggable: true,
-//        position: LatLng(currentLocation.latitude, currentLocation.longitude),
-//        icon: BitmapDescriptor.defaultMarkerWithHue(
-//          BitmapDescriptor.hueOrange,
-//        ),
-//        infoWindow:
-//        InfoWindow(title: "Your Location", snippet: 'Pickup'),
-//        onTap: () => _onMarkerTapped(
-//          MarkerId("345"),
-//        ),
-//      );
-//    });
   }
  var first;
+  var address = "";
   @override
   void initState() {
     super.initState();
@@ -249,82 +229,87 @@ class SearchPageState extends State<SearchPage> {
 
         );
       });
+
+      if(picupLocation.get("zuhause") != null && widget.zuhause == true){
+        var decode = jsonDecode(picupLocation.getString("zuhause"));
+        setState(() {
+      loacationAddress = decode["address"];
+      destination = LatLng(decode["lat"], decode["lng"]);
+      mapController.moveCamera(
+      CameraUpdate.newLatLng(
+      LatLng(decode["lat"], decode["lng"]),
+      ),
+      );
+          markers[MarkerId("360")] = Marker(
+            markerId: MarkerId("360"),
+            draggable: true,
+            position: LatLng(decode["lat"], decode["lng"]),
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+              BitmapDescriptor.hueGreen,
+            ),
+            infoWindow:
+            InfoWindow(title: "Destination", snippet: '*'),
+            onTap: () => _onMarkerTapped(
+              MarkerId("360"),
+            ),
+          );
+        });
+        getPolyline(pLocation.latitude, pLocation.longitude, destination.latitude, destination.longitude);
+      } else
+      if(picupLocation.get("crownClub") != null && widget.crown == true){
+        var decode = jsonDecode(picupLocation.getString("crownClub"));
+        setState(() {
+          loacationAddress = decode["address"];
+          destination = LatLng(decode["lat"], decode["lng"]);
+          mapController.moveCamera(
+            CameraUpdate.newLatLng(
+              LatLng(decode["lat"], decode["lng"]),
+            ),
+          );
+          markers[MarkerId("360")] = Marker(
+            markerId: MarkerId("360"),
+            draggable: true,
+            position: LatLng(decode["lat"], decode["lng"]),
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+              BitmapDescriptor.hueGreen,
+            ),
+            infoWindow:
+            InfoWindow(title: "Destination", snippet: '*'),
+            onTap: () => _onMarkerTapped(
+              MarkerId("360"),
+            ),
+          );
+        });
+        getPolyline(pLocation.latitude, pLocation.longitude, destination.latitude, destination.longitude);
+      } else
+      if(picupLocation.get("casino") != null && widget.casino == true){
+        var decode = jsonDecode(picupLocation.getString("casino"));
+        setState(() {
+          loacationAddress = decode["address"];
+          destination = LatLng(decode["lat"], decode["lng"]);
+          mapController.moveCamera(
+            CameraUpdate.newLatLng(
+              LatLng(decode["lat"], decode["lng"]),
+            ),
+          );
+          markers[MarkerId("360")] = Marker(
+            markerId: MarkerId("360"),
+            draggable: true,
+            position: LatLng(decode["lat"], decode["lng"]),
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+              BitmapDescriptor.hueGreen,
+            ),
+            infoWindow:
+            InfoWindow(title: "Destination", snippet: '*'),
+            onTap: () => _onMarkerTapped(
+              MarkerId("360"),
+            ),
+          );
+        });
+        getPolyline(pLocation.latitude, pLocation.longitude, destination.latitude, destination.longitude);
+      }
       await getAddressFromLatLng(decode["lat"].toString(), decode["lng"].toString());
     });
-
-//    getPicupLatLng().then((res)async{
-//      var decode = jsonDecode(res);
-//      setState(() {
-//        pLocation = LatLng(decode["lat"], decode["lng"]);
-//      });
-//      await Future.delayed(Duration(seconds: 2));
-//      setState(() {
-//        mapController.moveCamera(
-//          CameraUpdate.newLatLng(
-//            LatLng(decode["lat"], decode["lng"]),
-//            ),
-//          );
-//        markers[MarkerId("345")] = Marker(
-//          markerId: MarkerId("345"),
-//          draggable: true,
-//          position: LatLng(decode["lat"], decode["lng"]),
-//          icon: BitmapDescriptor.defaultMarkerWithHue(
-//            BitmapDescriptor.hueOrange,
-//          ),
-//          infoWindow:
-//          InfoWindow(title: "Your Location", snippet: 'Pickup'),
-//          onTap: () => _onMarkerTapped(
-//            MarkerId("345"),
-//          ),
-//        );
-//
-//      });
-//      final coordinates = new Coordinates(
-//          decode["lat"], decode["lng"]);
-//      var addresses = await Geocoder.local.findAddressesFromCoordinates(
-//          coordinates);
-//      setState(() {
-//        first = addresses.first;
-//      });
-//
-//      print("PickupLocation Address");
-//      print(' ${first.locality}, ${first.adminArea},${first.subLocality}, ${first.subAdminArea},${first.addressLine}, ${first.featureName},${first.thoroughfare}, ${first.subThoroughfare}');
-//    });
-
-
-//    try{
-//      getUserLocation().then((currentLocations){
-//        print("current location");
-//        print(currentLocations.latitude);
-//        setState(() {
-//          currentLocation = currentLocations;
-//        });
-//        setState(() {
-//          currentLocation = currentLocations;
-//          mapController.moveCamera(
-//            CameraUpdate.newLatLng(
-//              LatLng(currentLocations.latitude, currentLocations.longitude),
-//            ),
-//          );
-//          markers[MarkerId("345")] = Marker(
-//            markerId: MarkerId("345"),
-//            draggable: true,
-//            position: LatLng(currentLocations.latitude, currentLocations.longitude),
-//            icon: BitmapDescriptor.defaultMarkerWithHue(
-//              BitmapDescriptor.hueOrange,
-//            ),
-//            infoWindow:
-//            InfoWindow(title: "Your Location", snippet: 'Pickup'),
-//            onTap: () => _onMarkerTapped(
-//              MarkerId("345"),
-//            ),
-//          );
-//        });
-//      });
-//    }catch(e) {
-//      print("EEEEE $e");
-//    }
-
   }
 
   getPicupLatLng()async{
@@ -574,11 +559,8 @@ super.dispose();
                                 context, "/transport");
                               });
                             },
-
-
 //                                Navigator.pushReplacementNamed(
 //                                context, "/destination"),
-
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
@@ -605,6 +587,185 @@ super.dispose();
 //                                Icon(Icons.chevron_right,color: Colors.white,)
                               ],
                             )),),
+                        SizedBox(
+                          height: 10,
+                        ),
+                      ],
+                    ),
+                  ))
+            ],
+          )),
+      drawer: DrawerWidgetPage(),
+    );
+  }
+}
+
+Future displayPrediction(
+    Prediction p, ScaffoldState scaffold, BuildContext context) async {
+  if (p != null) {
+    // get detail (lat/lng)
+    PlacesDetailsResponse detail = await _places.getDetailsByPlaceId(p.placeId);
+    final lat = detail.result.geometry.location.lat;
+    final lng = detail.result.geometry.location.lng;
+    final address = detail.result.formattedAddress;
+    print("AddressAddress");
+    print(address);
+    print(lat);
+    print(lng);
+
+    return {"latitude": lat, "longitude": lng, "address": address};
+  }
+}
+
+// custom scaffold that handle search
+// basically your widget need to extends [GooglePlacesAutocompleteWidget]
+// and your state [GooglePlacesAutocompleteState]
+class CustomSearchScaffold extends PlacesAutocompleteWidget {
+  CustomSearchScaffold()
+      : super(
+    apiKey: kGoogleApiKey,
+    language: "en",
+  );
+
+  @override
+  _CustomSearchScaffoldState createState() => _CustomSearchScaffoldState();
+}
+
+class _CustomSearchScaffoldState extends PlacesAutocompleteState {
+  @override
+  Widget build(BuildContext context) {
+    final appBar = AppBar(title: AppBarPlacesAutoCompleteTextField());
+    final body = PlacesAutocompleteResult(onTap: (p) {
+      displayPrediction(p, _searchScaffoldKey.currentState, context);
+    });
+    return Scaffold(key: _searchScaffoldKey, appBar: appBar, body: body);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//    currentLocation = myLocation;
+//
+//
+//    print("raxi");
+//    return currentLocation;
+
+//    setState(() {
+//      mapController.moveCamera(
+//        CameraUpdate.newLatLng(
+//          LatLng(currentLocation.latitude, currentLocation.longitude),
+//        ),
+//      );
+//      markers[MarkerId("345")] = Marker(
+//        markerId: MarkerId("345"),
+//        draggable: true,
+//        position: LatLng(currentLocation.latitude, currentLocation.longitude),
+//        icon: BitmapDescriptor.defaultMarkerWithHue(
+//          BitmapDescriptor.hueOrange,
+//        ),
+//        infoWindow:
+//        InfoWindow(title: "Your Location", snippet: 'Pickup'),
+//        onTap: () => _onMarkerTapped(
+//          MarkerId("345"),
+//        ),
+//      );
+//    });
+
+
+
+
+//    getPicupLatLng().then((res)async{
+//      var decode = jsonDecode(res);
+//      setState(() {
+//        pLocation = LatLng(decode["lat"], decode["lng"]);
+//      });
+//      await Future.delayed(Duration(seconds: 2));
+//      setState(() {
+//        mapController.moveCamera(
+//          CameraUpdate.newLatLng(
+//            LatLng(decode["lat"], decode["lng"]),
+//            ),
+//          );
+//        markers[MarkerId("345")] = Marker(
+//          markerId: MarkerId("345"),
+//          draggable: true,
+//          position: LatLng(decode["lat"], decode["lng"]),
+//          icon: BitmapDescriptor.defaultMarkerWithHue(
+//            BitmapDescriptor.hueOrange,
+//          ),
+//          infoWindow:
+//          InfoWindow(title: "Your Location", snippet: 'Pickup'),
+//          onTap: () => _onMarkerTapped(
+//            MarkerId("345"),
+//          ),
+//        );
+//
+//      });
+//      final coordinates = new Coordinates(
+//          decode["lat"], decode["lng"]);
+//      var addresses = await Geocoder.local.findAddressesFromCoordinates(
+//          coordinates);
+//      setState(() {
+//        first = addresses.first;
+//      });
+//
+//      print("PickupLocation Address");
+//      print(' ${first.locality}, ${first.adminArea},${first.subLocality}, ${first.subAdminArea},${first.addressLine}, ${first.featureName},${first.thoroughfare}, ${first.subThoroughfare}');
+//    });
+
+
+//    try{
+//      getUserLocation().then((currentLocations){
+//        print("current location");
+//        print(currentLocations.latitude);
+//        setState(() {
+//          currentLocation = currentLocations;
+//        });
+//        setState(() {
+//          currentLocation = currentLocations;
+//          mapController.moveCamera(
+//            CameraUpdate.newLatLng(
+//              LatLng(currentLocations.latitude, currentLocations.longitude),
+//            ),
+//          );
+//          markers[MarkerId("345")] = Marker(
+//            markerId: MarkerId("345"),
+//            draggable: true,
+//            position: LatLng(currentLocations.latitude, currentLocations.longitude),
+//            icon: BitmapDescriptor.defaultMarkerWithHue(
+//              BitmapDescriptor.hueOrange,
+//            ),
+//            infoWindow:
+//            InfoWindow(title: "Your Location", snippet: 'Pickup'),
+//            onTap: () => _onMarkerTapped(
+//              MarkerId("345"),
+//            ),
+//          );
+//        });
+//      });
+//    }catch(e) {
+//      print("EEEEE $e");
+//    }
+
+
+
+
+
+
+
+
 //                        Text(
 //                          "Top Ergebnisse",
 //                          style: TextStyle(color: Colors.grey, fontSize: 12),
@@ -731,57 +892,4 @@ super.dispose();
 //                            Icon(Icons.chevron_right)
 //                          ],
 //                        ),
-                        SizedBox(
-                          height: 10,
-                        ),
-                      ],
-                    ),
-                  ))
-            ],
-          )),
-      drawer: DrawerWidgetPage(),
-    );
-  }
-}
 
-Future displayPrediction(
-    Prediction p, ScaffoldState scaffold, BuildContext context) async {
-  if (p != null) {
-    // get detail (lat/lng)
-    PlacesDetailsResponse detail = await _places.getDetailsByPlaceId(p.placeId);
-    final lat = detail.result.geometry.location.lat;
-    final lng = detail.result.geometry.location.lng;
-    final address = detail.result.formattedAddress;
-    print("AddressAddress");
-    print(address);
-    print(lat);
-    print(lng);
-
-    return {"latitude": lat, "longitude": lng, "address": address};
-  }
-}
-
-// custom scaffold that handle search
-// basically your widget need to extends [GooglePlacesAutocompleteWidget]
-// and your state [GooglePlacesAutocompleteState]
-class CustomSearchScaffold extends PlacesAutocompleteWidget {
-  CustomSearchScaffold()
-      : super(
-    apiKey: kGoogleApiKey,
-    language: "en",
-  );
-
-  @override
-  _CustomSearchScaffoldState createState() => _CustomSearchScaffoldState();
-}
-
-class _CustomSearchScaffoldState extends PlacesAutocompleteState {
-  @override
-  Widget build(BuildContext context) {
-    final appBar = AppBar(title: AppBarPlacesAutoCompleteTextField());
-    final body = PlacesAutocompleteResult(onTap: (p) {
-      displayPrediction(p, _searchScaffoldKey.currentState, context);
-    });
-    return Scaffold(key: _searchScaffoldKey, appBar: appBar, body: body);
-  }
-}

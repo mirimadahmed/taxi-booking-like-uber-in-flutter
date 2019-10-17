@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:flutter_share/flutter_share.dart';
 // This app is a stateful, it tracks the user's current choice.
 class FreundePage extends StatefulWidget {
 
@@ -68,6 +68,7 @@ class _FreundePageState extends State<FreundePage> with SingleTickerProviderStat
 
                 onPressed: () {
 //                  Navigator.pushReplacementNamed(context, '/');
+                  share();
                 },
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10)),
@@ -112,6 +113,14 @@ class _FreundePageState extends State<FreundePage> with SingleTickerProviderStat
            ),
 
       ),
+    );
+  }
+
+
+  Future<void> share() async {
+    await FlutterShare.share(
+        title: 'EMoover promo code',
+        text: '786786',
     );
   }
 }
