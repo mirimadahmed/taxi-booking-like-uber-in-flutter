@@ -5,7 +5,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoder/geocoder.dart';
 import 'package:geocoder/model.dart';
-import 'package:google_places_picker/google_places_picker.dart';
 import 'package:moover/widgets/drawer.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -599,26 +598,7 @@ super.dispose();
       drawer: DrawerWidgetPage(),
     );
   }
-  _showAutocomplete() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    try{
-      var place = await PluginGooglePlacePicker.showAutocomplete(
-          mode: PlaceAutocompleteMode.MODE_FULLSCREEN);
-      Map addresss = Map();
-      addresss = {
-        "lat" : place.latitude,
-        "lng" : place.longitude,
-        "address" : place.address,
-        "name" : place.name
-      };
-      print(addresss);
-      var encode = jsonEncode(addresss);
-      prefs.setString("pickupLocation", encode);
 
-    }catch(e){
-      print(e);
-    }
-  }
 }
 
 

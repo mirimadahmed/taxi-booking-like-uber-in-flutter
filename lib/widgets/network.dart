@@ -30,7 +30,7 @@ class NetworkUtil {
             ",\"message\":\"error\",\"response\":" +
             res +
             "}";
-        throw new Exception(res);
+        return new Exception(res);
       }
 
       List<Steps> steps;
@@ -40,7 +40,7 @@ class NetworkUtil {
         steps =
             parseSteps(_decoder.convert(res)["routes"][0]["legs"][0]["steps"]);
       } catch (e) {
-        throw new Exception(res);
+        return e;
       }
       print("distance");
       return {"distance": distance, "steps":steps};

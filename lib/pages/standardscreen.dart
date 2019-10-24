@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:google_places_picker/google_places_picker.dart';
 import 'package:moover/models/location_data.dart';
 import 'package:moover/pages/confirm.dart';
 import 'package:moover/pages/searchPage.dart';
@@ -132,10 +131,6 @@ class StandardScreenPageState extends State<StandardScreenPage> {
           );
         });
       });
-    PluginGooglePlacePicker.initialize(
-      androidApiKey: "AIzaSyB81xMeMewP3-P3KyUloVMJnvVEhgfHgrI",
-      iosApiKey: "AIzaSyB81xMeMewP3-P3KyUloVMJnvVEhgfHgrI",
-    );
     SharedPreferences.getInstance().then((fav){
       setState(() {
         z = fav.get("zuhause") != null ? true : false;
@@ -480,22 +475,29 @@ class StandardScreenPageState extends State<StandardScreenPage> {
                       setState(() {
                         _goingToPolyLineMap = true;
                       });
-                      getPolyline(
-                          _position1 != null ? _position1.target.latitude: pickpost != null ? pickpost.result.geometry.location.lat :destination.latitude, _position1 != null ? _position1.target.longitude : pickpost!=null ? pickpost.result.geometry.location.lng :destination.longitude,
-                          _position != null ? _position.target.latitude : destpost.result.geometry.location.lat, _position != null ? _position.target.longitude : destpost.result.geometry.location.lng
-                      ).then((_){
-                        setState(() {
-                          picData = SelectedLocationData(
+                      try{
+                        getPolyline(
+                            _position1 != null ? _position1.target.latitude: pickpost != null ? pickpost.result.geometry.location.lat :destination.latitude, _position1 != null ? _position1.target.longitude : pickpost!=null ? pickpost.result.geometry.location.lng :destination.longitude,
+                            _position != null ? _position.target.latitude : destpost.result.geometry.location.lat, _position != null ? _position.target.longitude : destpost.result.geometry.location.lng
+                        ).then((_){
+                          setState(() {
+                            picData = SelectedLocationData(
                               lat:_position1 != null ? _position1.target.latitude: pickpost != null ? pickpost.result.geometry.location.lat :destination.latitude,
-                            lng: _position1 != null ? _position1.target.longitude : pickpost!=null ? pickpost.result.geometry.location.lng :destination.longitude,
-                          );
-                          dropData = SelectedLocationData(
-                            lat: _position != null ? _position.target.latitude : destpost.result.geometry.location.lat,
-                            lng: _position != null ? _position.target.longitude : destpost.result.geometry.location.lng
-                          );
-                          _ploylineMap = true;
+                              lng: _position1 != null ? _position1.target.longitude : pickpost!=null ? pickpost.result.geometry.location.lng :destination.longitude,
+                            );
+                            dropData = SelectedLocationData(
+                                lat: _position != null ? _position.target.latitude : destpost.result.geometry.location.lat,
+                                lng: _position != null ? _position.target.longitude : destpost.result.geometry.location.lng
+                            );
+                            _ploylineMap = true;
+                          });
                         });
-                      });
+                      }catch(_){
+                        setState(() {
+                          _goingToPolyLineMap = true;
+                        });
+                        _showSnackBar("Something went wrong");
+                      }
                     },
                     child: Text( _goingToPolyLineMap ? "Loading.." :"ABHOLORT BESTÄTIGEN",style: TextStyle(fontSize: 16,color: Colors.white),),
                   ),
@@ -791,41 +793,47 @@ class StandardScreenPageState extends State<StandardScreenPage> {
 
 
   Future getPolyline(originLat,originLng,destLat,destLng) async {
-    await network
-        .get("origin=" +
-        originLat.toString() +
-        "," +
-        originLng.toString() +
-        "&destination=" +
-        destLat.toString() +
-        "," +
-        destLng.toString() +
-        "&mode=walking&key=$kGoogleApiKey")
-        .then((dynamic res) {
-      print(res);
-      List<Steps> rr = res["steps"];
-      print("distancedistance");
+    try{
+      await network
+          .get("origin=" +
+          originLat.toString() +
+          "," +
+          originLng.toString() +
+          "&destination=" +
+          destLat.toString() +
+          "," +
+          destLng.toString() +
+          "&mode=walking&key=$kGoogleApiKey")
+          .then((dynamic res) {
+        print(res);
+        List<Steps> rr = res["steps"];
+        print("distancedistance");
 
-      print(res["distance"]);
-      setState(() {
-        distance = SelectedLocationData(distance: res["distance"].toString());
-      });
+        print(res["distance"]);
+        setState(() {
+          distance = SelectedLocationData(distance: res["distance"].toString());
+        });
 
-      for (final i in rr) {
+        for (final i in rr) {
 //            ccc.add(map.Location(
 //                i.startLocation.latitude, i.startLocation.longitude));
 //            ccc.add(map.Location(
 //                i.endLocation.latitude, i.endLocation.longitude));
-        print("i.polyline");
-        print(i.polyline);
-        decodePoly(i.polyline);
-      }
+          print("i.polyline");
+          print(i.polyline);
+          decodePoly(i.polyline);
+        }
 //
-    });
-    if(mounted)
-    setState(() {
-      polylines[PolylineId("poly1")] = Polyline(polylineId: PolylineId("poly1"),points: ccc, width: 5);
-    });
+      });
+      if(mounted)
+        setState(() {
+          polylines[PolylineId("poly1")] = Polyline(polylineId: PolylineId("poly1"),points: ccc, width: 5);
+        });
+    }catch(_){
+      setState(() {
+
+      });
+    }
   }
 
 
@@ -855,6 +863,15 @@ class StandardScreenPageState extends State<StandardScreenPage> {
       lng += dlng;
       ccc.add(LatLng(lat / 100000.0, lng / 100000.0));
     }
+  }
+
+
+  void _showSnackBar(message) {
+    _scaffoldKey.currentState.showSnackBar(SnackBar(
+      backgroundColor: Colors.black,
+      content: Text(message),
+      duration: Duration(seconds: 5),
+    ));
   }
 }
 
