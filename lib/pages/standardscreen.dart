@@ -30,6 +30,8 @@ class StandardScreenPage extends StatefulWidget {
 SelectedLocationData picData = new SelectedLocationData();
 SelectedLocationData dropData = new SelectedLocationData();
 SelectedLocationData distance = new SelectedLocationData();
+SelectedLocationData notiz = new SelectedLocationData();
+SelectedLocationData selectedAmount = new SelectedLocationData();
 
 
 class StandardScreenPageState extends State<StandardScreenPage> {
@@ -57,6 +59,8 @@ class StandardScreenPageState extends State<StandardScreenPage> {
   bool _myLocationButtonEnabled = false;
   bool _ploylineMap = false;
   bool _goingToPolyLineMap = false;
+  double amount = 22.34;
+  TextEditingController _controllerNote;
   getUserLocation() async {
     //call this async method from wherever you need
     loc.LocationData currentLocation;
@@ -108,6 +112,7 @@ class StandardScreenPageState extends State<StandardScreenPage> {
   @override
   void initState() {
     super.initState();
+    _controllerNote = TextEditingController();
       getUserLocation().then((currentLocations)async{
 
         setState(() {
@@ -365,7 +370,11 @@ class StandardScreenPageState extends State<StandardScreenPage> {
                                 padding: EdgeInsets.symmetric(vertical: 10),
                                 shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10)),
-                                onPressed: () {},
+                                onPressed: () {
+                                  setState(() {
+                                    amount = amount + 5.0;
+                                  });
+                                },
                                 child: Text(
                                   "Ja, Bitte!",
                                   style: TextStyle(
@@ -380,7 +389,13 @@ class StandardScreenPageState extends State<StandardScreenPage> {
                                 padding: EdgeInsets.symmetric(vertical: 10),
                                 shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10)),
-                                onPressed: () {},
+                                onPressed: () {
+                                  if(amount > 12.34){
+                                    setState(() {
+                                      amount = amount - 5;
+                                    });
+                                  }
+                                },
                                 child: Text(
                                   "Nein, Danke!",
                                   style: TextStyle(
@@ -414,7 +429,7 @@ class StandardScreenPageState extends State<StandardScreenPage> {
                                       color: Colors.white, fontSize: 16),
                                 ),
                                 Text(
-                                  "22,34 €",
+                                  "$amount €",
                                   style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 18,
@@ -428,7 +443,9 @@ class StandardScreenPageState extends State<StandardScreenPage> {
                                 padding: EdgeInsets.symmetric(vertical: 10),
                                 shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10)),
-                                onPressed: () {},
+                                onPressed: () {
+                                  _showDialog();
+                                },
                                 child: Text(
                                   "Notiz",
                                   style: TextStyle(
@@ -448,6 +465,9 @@ class StandardScreenPageState extends State<StandardScreenPage> {
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10)),
                             onPressed: () {
+                              setState(() {
+                                selectedAmount = SelectedLocationData(amount: amount.toString());
+                              });
                               Navigator.push(context, PageTransition(child: ConfirmPage(), type: PageTransitionType.rightToLeft));
                             },
                             child: Text(
@@ -475,7 +495,6 @@ class StandardScreenPageState extends State<StandardScreenPage> {
                       setState(() {
                         _goingToPolyLineMap = true;
                       });
-                      try{
                         getPolyline(
                             _position1 != null ? _position1.target.latitude: pickpost != null ? pickpost.result.geometry.location.lat :destination.latitude, _position1 != null ? _position1.target.longitude : pickpost!=null ? pickpost.result.geometry.location.lng :destination.longitude,
                             _position != null ? _position.target.latitude : destpost.result.geometry.location.lat, _position != null ? _position.target.longitude : destpost.result.geometry.location.lng
@@ -489,15 +508,9 @@ class StandardScreenPageState extends State<StandardScreenPage> {
                                 lat: _position != null ? _position.target.latitude : destpost.result.geometry.location.lat,
                                 lng: _position != null ? _position.target.longitude : destpost.result.geometry.location.lng
                             );
-                            _ploylineMap = true;
+
                           });
                         });
-                      }catch(_){
-                        setState(() {
-                          _goingToPolyLineMap = true;
-                        });
-                        _showSnackBar("Something went wrong");
-                      }
                     },
                     child: Text( _goingToPolyLineMap ? "Loading.." :"ABHOLORT BESTÄTIGEN",style: TextStyle(fontSize: 16,color: Colors.white),),
                   ),
@@ -827,11 +840,13 @@ class StandardScreenPageState extends State<StandardScreenPage> {
       });
       if(mounted)
         setState(() {
+          _ploylineMap = true;
           polylines[PolylineId("poly1")] = Polyline(polylineId: PolylineId("poly1"),points: ccc, width: 5);
         });
     }catch(_){
       setState(() {
-
+        _goingToPolyLineMap = false;
+        _showSnackBar("Some thing went wrong");
       });
     }
   }
@@ -870,8 +885,59 @@ class StandardScreenPageState extends State<StandardScreenPage> {
     _scaffoldKey.currentState.showSnackBar(SnackBar(
       backgroundColor: Colors.black,
       content: Text(message),
-      duration: Duration(seconds: 5),
+      duration: Duration(seconds: 2),
     ));
+  }
+
+
+  _showDialog(){
+    return showDialog(
+      context: context,
+      builder: (context){
+        return AlertDialog(
+          title: Text("Enter your message for driver"),
+          content: Container(
+            child: TextField(
+              decoration: InputDecoration(
+                labelText: 'Message',
+                hintText: 'your message',
+                labelStyle: TextStyle(color: Colors.black),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide:
+                  BorderSide(color: Colors.green),
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(
+                    color: Colors.green,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          actions: <Widget>[
+            FlatButton(
+              child: Text("Cancel", style: TextStyle(color: Colors.red),),
+              onPressed: (){
+                setState(() {
+                  notiz = SelectedLocationData(notiz: _controllerNote.text ?? "");
+                });
+                Navigator.pop(context);
+              },
+            ),
+            FlatButton(
+              child: Text("OK", style: TextStyle(color: Colors.green),),
+              onPressed: (){
+                Navigator.pop(context);
+              },
+            ),
+
+          ],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10)
+          ),
+        );
+      }
+    );
   }
 }
 
