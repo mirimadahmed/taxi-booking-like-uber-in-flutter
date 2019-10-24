@@ -159,7 +159,8 @@ class ConfirmPickupState extends State<ConfirmPickup> {
                       Navigator.pushReplacementNamed(context, "/transport");
                     },
                     child: Text("ABHOLORT BESTÄTIGEN",style: TextStyle(fontSize: 16,color: Colors.white),),
-                  ))
+                  )
+              )
             ],
           )),
       drawer: DrawerWidgetPage(),

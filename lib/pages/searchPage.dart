@@ -5,9 +5,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoder/geocoder.dart';
 import 'package:geocoder/model.dart';
+import 'package:google_places_picker/google_places_picker.dart';
 import 'package:moover/widgets/drawer.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:page_transition/page_transition.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import '../widgets/network.dart';
@@ -103,7 +105,7 @@ class SearchPageState extends State<SearchPage> {
 //
     });
     setState(() {
-        polylines[PolylineId("poly1")] = Polyline(polylineId: PolylineId("poly1"),points: ccc);
+        polylines[PolylineId("poly1")] = Polyline(polylineId: PolylineId("poly1"),points: ccc, width: 5);
       });
   }
 
@@ -202,40 +204,40 @@ class SearchPageState extends State<SearchPage> {
   void initState() {
     super.initState();
     SharedPreferences.getInstance().then((picupLocation)async{
-      var decode = jsonDecode(picupLocation.getString("pickupLocation"));
-      setState(() {
+        var decode = jsonDecode(picupLocation.getString("pickupLocation"));
         setState(() {
-        pLocation = LatLng(decode["lat"], decode["lng"]);
-      });
-      });
-      await Future.delayed(Duration(seconds: 2));
-      setState(() {
-        mapController.moveCamera(
-          CameraUpdate.newLatLng(
-            LatLng(decode["lat"], decode["lng"]),
-          ),
-        );
-      });
-      setState(() {
-        markers[MarkerId("345")] =Marker(
-          markerId: MarkerId("345"),
-          draggable: true,
-          position: LatLng(decode["lat"], decode["lng"]),
-          icon: BitmapDescriptor.defaultMarkerWithHue(
-            BitmapDescriptor.hueOrange,
-          ),
-          infoWindow:
-          InfoWindow(title: "Your Location", snippet: 'Pickup'),
+          setState(() {
+            pLocation = LatLng(decode["lat"], decode["lng"]);
+          });
+        });
+        await Future.delayed(Duration(seconds: 2));
+        setState(() {
+          mapController.animateCamera(
+            CameraUpdate.newLatLng(
+              LatLng(decode["lat"], decode["lng"]),
+            ),
+          );
+        });
+        setState(() {
+          markers[MarkerId("345")] =Marker(
+            markerId: MarkerId("345"),
+            draggable: true,
+            position: LatLng(decode["lat"], decode["lng"]),
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+              BitmapDescriptor.hueOrange,
+            ),
+            infoWindow:
+            InfoWindow(title: "Your Location", snippet: 'Pickup'),
 
-        );
-      });
-
+          );
+        });
+        await getAddressFromLatLng(decode["lat"].toString(), decode["lng"].toString());
       if(picupLocation.get("zuhause") != null && widget.zuhause == true){
         var decode = jsonDecode(picupLocation.getString("zuhause"));
         setState(() {
       loacationAddress = decode["address"];
       destination = LatLng(decode["lat"], decode["lng"]);
-      mapController.moveCamera(
+      mapController.animateCamera(
       CameraUpdate.newLatLng(
       LatLng(decode["lat"], decode["lng"]),
       ),
@@ -261,7 +263,7 @@ class SearchPageState extends State<SearchPage> {
         setState(() {
           loacationAddress = decode["address"];
           destination = LatLng(decode["lat"], decode["lng"]);
-          mapController.moveCamera(
+          mapController.animateCamera(
             CameraUpdate.newLatLng(
               LatLng(decode["lat"], decode["lng"]),
             ),
@@ -287,7 +289,7 @@ class SearchPageState extends State<SearchPage> {
         setState(() {
           loacationAddress = decode["address"];
           destination = LatLng(decode["lat"], decode["lng"]);
-          mapController.moveCamera(
+          mapController.animateCamera(
             CameraUpdate.newLatLng(
               LatLng(decode["lat"], decode["lng"]),
             ),
@@ -308,7 +310,7 @@ class SearchPageState extends State<SearchPage> {
         });
         getPolyline(pLocation.latitude, pLocation.longitude, destination.latitude, destination.longitude);
       }
-      await getAddressFromLatLng(decode["lat"].toString(), decode["lng"].toString());
+
     });
   }
 
@@ -382,7 +384,7 @@ super.dispose();
                 child: FittedBox(
                   child: FloatingActionButton(
                     onPressed: () {
-                      Navigator.of(context).pop();
+                      Navigator.pop(context);
                     },
                     child: Icon(
                       Icons.chevron_left,
@@ -428,7 +430,6 @@ super.dispose();
                           language: "en",
                           radius: 15000,
                           location: Location(pLocation.latitude, pLocation.longitude),
-
                       );
 
                       if(p != null){
@@ -598,7 +599,30 @@ super.dispose();
       drawer: DrawerWidgetPage(),
     );
   }
+  _showAutocomplete() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    try{
+      var place = await PluginGooglePlacePicker.showAutocomplete(
+          mode: PlaceAutocompleteMode.MODE_FULLSCREEN);
+      Map addresss = Map();
+      addresss = {
+        "lat" : place.latitude,
+        "lng" : place.longitude,
+        "address" : place.address,
+        "name" : place.name
+      };
+      print(addresss);
+      var encode = jsonEncode(addresss);
+      prefs.setString("pickupLocation", encode);
+
+    }catch(e){
+      print(e);
+    }
+  }
 }
+
+
+
 
 Future displayPrediction(
     Prediction p, ScaffoldState scaffold, BuildContext context) async {
@@ -608,12 +632,13 @@ Future displayPrediction(
     final lat = detail.result.geometry.location.lat;
     final lng = detail.result.geometry.location.lng;
     final address = detail.result.formattedAddress;
+    final name = detail.result.name;
     print("AddressAddress");
     print(address);
     print(lat);
     print(lng);
 
-    return {"latitude": lat, "longitude": lng, "address": address};
+    return {"latitude": lat, "longitude": lng, "address": address, "name" : name};
   }
 }
 

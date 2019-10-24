@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:moover/main.dart';
+
 import './route.dart';
 import 'package:http/http.dart' as http;
 
@@ -43,6 +45,13 @@ class NetworkUtil {
       print("distance");
       return {"distance": distance, "steps":steps};
     });
+  }
+
+   getAddress(lat,lng)async{
+    var res = await http.get("https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lng&key=$kGoogleApiKey");
+    var body = jsonDecode(res.body);
+    var address = body["results"][0]["formatted_address"];
+    return address;
   }
 
   List<Steps> parseSteps(final responseBody) {

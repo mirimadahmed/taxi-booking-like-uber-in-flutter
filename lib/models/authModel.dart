@@ -3,11 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:location/location.dart' as LocationPlugin;
-import 'package:geolocator/geolocator.dart';
-import 'package:flutter/services.dart';
-import 'dart:convert';
-import '../main.dart';
 
 class AuthModel {
   final ref = Firestore.instance.collection('riders');

@@ -1,10 +1,12 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:moover/pages/standardscreen.dart';
 import 'package:moover/widgets/drawer.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:async';
 import 'package:geocoder/geocoder.dart';
+import 'package:moover/widgets/network.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ConfirmPage extends StatefulWidget {
@@ -19,55 +21,48 @@ class ConfirmPageState extends State<ConfirmPage> {
   Completer<GoogleMapController> _controller = Completer();
   GoogleMapController mapController;
   Map<MarkerId,Marker> markers = <MarkerId,Marker>{};
+  NetworkUtil network = new NetworkUtil();
   static final CameraPosition _kGooglePlex = CameraPosition(
-    target: LatLng(37.42796133580664, -122.085749655962),
-    zoom: 14.4746,
+    target: LatLng(picData.lat, picData.lng),
+    zoom: 17.0,
   );
   String DestAsddress;
-  var first;
+  String PicAddress;
   @override
   void initState() {
     super.initState();
-    SharedPreferences.getInstance().then((picupLocation)async{
-      var decode = jsonDecode(picupLocation.getString("pickupLocation"));
-      var dest = jsonDecode(picupLocation.getString("destLocation"));
-      print("dest : $dest");
+    print(picData.lat);
+    print(picData.lng);
+    Future.delayed(Duration(seconds: 2), (){
       setState(() {
-        DestAsddress = dest["address"];
-      });
-      await Future.delayed(Duration(seconds: 2));
-      setState(() {
-        mapController.moveCamera(
+        mapController.animateCamera(
           CameraUpdate.newLatLng(
-            LatLng(decode["lat"], decode["lng"]),
+            LatLng(picData.lat, picData.lng),
           ),
         );
-      });
-      setState(() {
         markers[MarkerId("345")] =Marker(
           markerId: MarkerId("345"),
-          draggable: true,
-          position: LatLng(decode["lat"], decode["lng"]),
+          draggable: false,
+          position: LatLng(picData.lat, picData.lng),
           icon: BitmapDescriptor.defaultMarkerWithHue(
-            BitmapDescriptor.hueOrange,
+            BitmapDescriptor.hueGreen,
           ),
           infoWindow:
           InfoWindow(title: "Your Location", snippet: 'Pickup'),
-
         );
       });
-      final coordinates = new Coordinates(
-          decode["lat"], decode["lng"]);
-      var addresses = await Geocoder.local.findAddressesFromCoordinates(
-          coordinates);
+    });
+    network.getAddress(picData.lat, picData.lng).then((res){
+      print("getting address");
       setState(() {
-        first = addresses.first;
+        PicAddress = res.toString();
       });
-
-      print("PickupLocation Address");
-      print(' ${first.locality}, ${first.adminArea},${first.subLocality}, ${first.subAdminArea},${first.addressLine}, ${first.featureName},${first.thoroughfare}, ${first.subThoroughfare}');
-
-      return first;
+    });
+    network.getAddress(dropData.lat, dropData.lng).then((res){
+      print("getting address");
+      setState(() {
+        DestAsddress = res.toString();
+      });
     });
   }
 
@@ -80,7 +75,6 @@ class ConfirmPageState extends State<ConfirmPage> {
 
   @override
   Widget build(BuildContext context) {
-    Orientation orientation = MediaQuery.of(context).orientation;
     return Scaffold(
 //      backgroundColor: Colors.transparent,
       appBar: AppBar(
@@ -153,21 +147,21 @@ class ConfirmPageState extends State<ConfirmPage> {
                                       color: Color.fromRGBO(112, 112, 112, 1),
                                       fontSize: 12),
                                 ),
-                               first == null ? Container() :
-                               Container(
-                                 width: 200,
+                                PicAddress == null ? Container() :
+                               LimitedBox(
+                                 maxWidth: MediaQuery.of(context).size.width /1.5,
                                    child:Text(
-                                  "${first.locality}, ${first.thoroughfare ?? ""} ${first.subLocality}",
+                                  "$PicAddress",
                                   style: TextStyle(
                                       color: Color.fromRGBO(112, 112, 112, 1),
                                       fontSize: 16),
                                  overflow: TextOverflow.ellipsis,
-                                ))
+                                )),
                               ],
                             ),
                             Expanded(child: Container()),
                             Icon(
-                              Icons.add,
+                              Icons.location_on,
                               color: Color.fromRGBO(64, 236, 120, 1.0),
                             )
                           ],
@@ -189,31 +183,31 @@ class ConfirmPageState extends State<ConfirmPage> {
                             SizedBox(
                               width: 15,
                             ),
-                            Container(
-                              width: 200,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <Widget>[
-                                  Text(
-                                    "Destination Location",
-                                    style: TextStyle(
-                                        color: Color.fromRGBO(112, 112, 112, 1),
-                                        fontSize: 12),
-                                  ),
-                                  Text(
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                Text(
+                                  "Destination Location",
+                                  style: TextStyle(
+                                      color: Color.fromRGBO(112, 112, 112, 1),
+                                      fontSize: 12),
+                                ),
+                                LimitedBox(
+                                  maxWidth: MediaQuery.of(context).size.width/1.5,
+                                  child: Text(
                                     DestAsddress ?? "",
                                     style: TextStyle(
                                         color: Color.fromRGBO(112, 112, 112, 1),
                                         fontSize: 16),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                  )
-                                ],
-                              ),
+                                  ),
+                                )
+                              ],
                             ),
                             Expanded(child: Container()),
                             Icon(
-                              Icons.clear,
+                              Icons.location_off,
                               color: Color.fromRGBO(64, 236, 120, 1.0),
                             )
                           ],
@@ -249,7 +243,7 @@ class ConfirmPageState extends State<ConfirmPage> {
                           height: 10,
                         ),
                         Text(
-                          "Wartezeit : 4 Min",
+                          "Entfernung : ${distance.distance}",
                           style: TextStyle(color: Colors.white,fontSize: 14),
                         ),
 
@@ -298,7 +292,71 @@ class ConfirmPageState extends State<ConfirmPage> {
                   ))
             ],
           )),
-      drawer: DrawerWidgetPage(),
     );
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+//    SharedPreferences.getInstance().then((picupLocation)async{
+//      var decode = jsonDecode(picupLocation.getString("pickupLocation"));
+//      var dest = jsonDecode(picupLocation.getString("destLocation"));
+//      print("dest : $dest");
+//      setState(() {
+//        DestAsddress = dest["address"];
+//      });
+//       Future.delayed(Duration(seconds: 2), (){
+//        setState(() {
+//          mapController.moveCamera(
+//            CameraUpdate.newLatLng(
+//              LatLng(decode["lat"], decode["lng"]),
+//            ),
+//          );
+//          markers[MarkerId("345")] =Marker(
+//            markerId: MarkerId("345"),
+//            draggable: true,
+//            position: LatLng(decode["lat"], decode["lng"]),
+//            icon: BitmapDescriptor.defaultMarkerWithHue(
+//              BitmapDescriptor.hueOrange,
+//            ),
+//            infoWindow:
+//            InfoWindow(title: "Your Location", snippet: 'Pickup'),
+//          );
+//        });
+//      });
+//
+//      setState(() {
+//        markers[MarkerId("345")] =Marker(
+//          markerId: MarkerId("345"),
+//          draggable: true,
+//          position: LatLng(decode["lat"], decode["lng"]),
+//          icon: BitmapDescriptor.defaultMarkerWithHue(
+//            BitmapDescriptor.hueOrange,
+//          ),
+//          infoWindow:
+//          InfoWindow(title: "Your Location", snippet: 'Pickup'),
+//
+//        );
+//      });
+//      final coordinates = new Coordinates(
+//          decode["lat"], decode["lng"]);
+//      var addresses = await Geocoder.local.findAddressesFromCoordinates(
+//          coordinates);
+//      setState(() {
+//        first = addresses.first;
+//      });
+//
+//      print("PickupLocation Address");
+//      print(' ${first.locality}, ${first.adminArea},${first.subLocality}, ${first.subAdminArea},${first.addressLine}, ${first.featureName},${first.thoroughfare}, ${first.subThoroughfare}');
+//
+//      return first;
+//    });

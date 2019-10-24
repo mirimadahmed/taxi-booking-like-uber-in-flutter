@@ -1,7 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:moover/main.dart';
 import 'package:moover/widgets/customSwitch.dart';
-
+//import 'package:stripe_payment/stripe_payment.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 // This app is a stateful, it tracks the user's current choice.
 class PaymentsPage extends StatefulWidget {
 
@@ -15,6 +17,8 @@ class _PaymentsPageState extends State<PaymentsPage> with SingleTickerProviderSt
   void initState() {
     _tabController = new TabController(length: 2, vsync: this);
     super.initState();
+//    StripePayment.setOptions(
+//        StripeOptions(publishableKey: "pk_test_aSaULNS8cJU6Tvo20VAXy6rp", merchantId: "Test", androidPayMode: 'test'));
   }
 
   @override
@@ -85,6 +89,15 @@ class _PaymentsPageState extends State<PaymentsPage> with SingleTickerProviderSt
                              child: const Text('Kreditkarte hinzufügen'),
                              onPressed: () {
 //                               Navigator.pop(context, '🙋 Yes');
+//                               StripeSource.addSource().then((String token) {
+//                                 //Show card added successfully...
+//                                 Firestore.instance
+//                                     .collection('users')
+//                                     .document(currentUserModel.id)
+//                                     .collection('tokens')
+//                                     .document()
+//                                     .setData({'tokenId': token});
+//                               });
                              },
                            ),
                            CupertinoActionSheetAction(
@@ -241,6 +254,7 @@ class _PaymentsPageState extends State<PaymentsPage> with SingleTickerProviderSt
       ),
     );
   }
+  
 }
 void showTwoItems(context){
   showCupertinoModalPopup(
