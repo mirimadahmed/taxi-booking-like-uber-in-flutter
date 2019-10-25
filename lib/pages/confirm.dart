@@ -97,7 +97,7 @@ class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin 
           leading: IconButton(
               icon: Icon(
                Icons.arrow_back,
-                color: _controller != null ? Colors.transparent : Color.fromRGBO(64, 236, 120, 1.0),
+                color: controller != null ? Colors.transparent : Color.fromRGBO(64, 236, 120, 1.0),
               ),
               onPressed:controller != null ? null : () {
                 Navigator.of(context).pop();
@@ -116,8 +116,8 @@ class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin 
                     height: MediaQuery.of(context).size.height,
                     width: MediaQuery.of(context).size.width,
                     child: GoogleMap(
-                      myLocationEnabled: true,
-                      myLocationButtonEnabled: true,
+                      myLocationButtonEnabled: false,
+                      compassEnabled: false,
                       scrollGesturesEnabled: false,
                       markers: Set<Marker>.of(markers.values),
                       mapType: MapType.normal,
@@ -305,6 +305,13 @@ class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin 
                                   });
                                   controller.forward();
                                 });
+                                Future.delayed(Duration(seconds: 5), (){
+                                  setState(() {
+                                    controller.dispose();
+                                    controller = null;
+                                  });
+                                  _showSnackBar("There is no driver available for now");
+                                });
                               } ,
                               child: Text(
                                "WEITER",
@@ -322,7 +329,7 @@ class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin 
                       ),
                     )) :
                 Positioned(
-                  bottom: 0,
+                  top: 0,
                   child: FadeTransition(
                     opacity: animation,
                     child: Container(
@@ -342,6 +349,14 @@ class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin 
             )),
       ),
     );
+  }
+
+  void _showSnackBar(message) {
+    _scaffoldKey.currentState.showSnackBar(SnackBar(
+      backgroundColor: Colors.black,
+      content: Text(message),
+      duration: Duration(seconds: 2),
+    ));
   }
 }
 

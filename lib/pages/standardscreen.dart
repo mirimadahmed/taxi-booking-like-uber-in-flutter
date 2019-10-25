@@ -59,6 +59,7 @@ class StandardScreenPageState extends State<StandardScreenPage> {
   bool _myLocationButtonEnabled = false;
   bool _ploylineMap = false;
   bool _goingToPolyLineMap = false;
+  bool add = false;
   double amount = 22.34;
   TextEditingController _controllerNote;
   getUserLocation() async {
@@ -370,8 +371,9 @@ class StandardScreenPageState extends State<StandardScreenPage> {
                                 padding: EdgeInsets.symmetric(vertical: 10),
                                 shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10)),
-                                onPressed: () {
+                                onPressed: add ? null :() {
                                   setState(() {
+                                    add = true;
                                     amount = amount + 5.0;
                                   });
                                 },
@@ -392,6 +394,7 @@ class StandardScreenPageState extends State<StandardScreenPage> {
                                 onPressed: () {
                                   if(amount > 12.34){
                                     setState(() {
+                                      add = false;
                                       amount = amount - 5;
                                     });
                                   }
