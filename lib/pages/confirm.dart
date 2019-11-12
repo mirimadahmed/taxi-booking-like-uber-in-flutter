@@ -62,6 +62,7 @@ class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin 
     });
     network.getAddress(dropData.lat, dropData.lng).then((res){
       print("getting address");
+      if(mounted)
       setState(() {
         DestAsddress = res.toString();
       });

@@ -130,6 +130,13 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_webview_plugin:
+    dependency: "direct main"
+    description:
+      name: flutter_webview_plugin
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.3.8"
   geocoder:
     dependency: "direct main"
     description:
@@ -279,6 +286,13 @@ packages:
     dependency: transitive
     description:
       name: string_scanner
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.0.5"
+  stripe_payment:
+    dependency: "direct main"
+    description:
+      name: stripe_payment
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.0.5"

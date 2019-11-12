@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -32,7 +33,7 @@ class _Login extends State<Login> {
 
   String _email;
   String _password;
-
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
 //  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
 
@@ -69,6 +70,9 @@ class _Login extends State<Login> {
 //      });
     }
   }
+
+
+
 
   Widget _buildEmailTextField() {
     return TextFormField(
@@ -128,62 +132,101 @@ class _Login extends State<Login> {
 
   Widget _buildLoginBtn() {
     return Container(
-      width: (90.0),
-      height: MediaQuery.of(context).size.height * 6 / 100,
-      decoration: BoxDecoration(
+      child: RaisedButton(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12.0),
-      ),
-      child: Material(
-        child: MaterialButton(
-          padding: EdgeInsets.only(left: 0.0, right: 0.0),
-          child: Text(
-            'Login',
-            style: TextStyle(fontFamily: 'SFUID-Medium', fontSize: 17.0, color: Colors.black45),
-          ),
-          onPressed: () {
-            if (!_loginForm.currentState.validate()) {
-              return;
-            }
-            setState(() {
-              _progress = true;
-            });
-
-            _loginForm.currentState.save();
-
-
-            AuthModel().login(email: _email, password: _password).then((resp) async {
-              print(resp);
-              if (resp["success"]) {
-                DocumentSnapshot userRecord = await Firestore.instance.collection('riders').document(resp["userId"]).get();
-                if (userRecord != null) currentUserModel = User.fromDocument(userRecord);
-                final SharedPreferences prefs = await SharedPreferences.getInstance();
-                prefs.setString("user", jsonEncode(userRecord.data));
-
-                setState(() {
-                  _progress = false;
-                });
-                if (userRecord != null) {
-                  Navigator.pop(context);
-                  _setUpNotifications();
-                  Navigator.pushReplacementNamed(context, '/Dashboard');
-                  Firestore.instance.document("riders/${currentUserModel.id}").updateData({
-                    'active': true
-                    //firestore plugin doesnt support deleting, so it must be nulled / falsed
-                  });
-                }
-              } else {
-                setState(() {
-                  _progress = false;
-                });
-                _showSnackBar(resp["message"]);
-              }
-          });
-            },
-          highlightColor: Colors.lightBlueAccent.withOpacity(0.5),
-          splashColor: Colors.lightGreenAccent.withOpacity(0.5),
+        padding: EdgeInsets.only(left: 0.0, right: 0.0),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10)),
+        child: Text(
+          'Login',
+          style: TextStyle(fontFamily: 'SFUID-Medium', fontSize: 17.0, color: Colors.black45),
         ),
-        color: Colors.transparent,
+        onPressed: _progress ? null : () async{
+          final SharedPreferences prefs = await SharedPreferences.getInstance();
+          if (!_loginForm.currentState.validate()) {
+            return;
+          }
+          setState(() {
+            _progress = true;
+          });
+
+          _loginForm.currentState.save();
+
+          _auth.signInWithEmailAndPassword(email: _email.trim(), password: _password.trim()).then((user)async{
+            var ref = Firestore.instance.collection("riders").document(user.user.uid);
+            await ref.get().then((doc){
+              print("ok1");
+              print(doc.data);
+              if(doc.exists){
+                prefs.setBool("profilecomplete", doc.exists);
+                currentUserModel = User.fromDocument(doc);
+                prefs.setString("user", jsonEncode(doc.data));
+                if(user.user.isEmailVerified){
+                  prefs.setString("email", user.user.email);
+                  prefs.setString('id', user.user.uid);
+                  prefs.setBool("emailverified", true);
+                  ref.updateData({
+                    "emailvarified" : true,
+                    'active': true
+                  });
+                  setState(() {
+                    _progress = false;
+                  });
+                  Navigator.pushReplacementNamed(context, '/Dashboard');
+                }else{
+                  setState(() {
+                    _progress = false;
+                  });
+                  _showSnackBar("Kindely active your account");
+                }
+                setState(() {
+                  _progress = false;
+                });
+              }
+              else{
+                Navigator.pushNamed(context, '/register');
+              }
+            });
+          }).catchError((err){
+            setState(() {
+              _progress = false;
+            });
+            print("erro from login");
+            print(err);
+            _showSnackBar("Invalid email and password");
+          });
+
+//            AuthModel().login(email: _email, password: _password).then((resp) async {
+//              print(resp);
+//              if (resp["success"]) {
+//                DocumentSnapshot userRecord = await Firestore.instance.collection('riders').document(resp["userId"]).get();
+//                if (userRecord != null) currentUserModel = User.fromDocument(userRecord);
+//                final SharedPreferences prefs = await SharedPreferences.getInstance();
+//                prefs.setString("user", jsonEncode(userRecord.data));
+//
+//                setState(() {
+//                  _progress = false;
+//                });
+//                if (userRecord != null) {
+//                  Navigator.pop(context);
+//                  _setUpNotifications();
+//                  Navigator.pushReplacementNamed(context, '/Dashboard');
+//                  Firestore.instance.document("riders/${currentUserModel.id}").updateData({
+//                    'active': true
+//                    //firestore plugin doesnt support deleting, so it must be nulled / falsed
+//                  });
+//                }
+//              } else {
+//                setState(() {
+//                  _progress = false;
+//                });
+//                _showSnackBar(resp["message"]);
+//              }
+//          });
+
+        },
+        highlightColor: Colors.lightBlueAccent.withOpacity(0.5),
+        splashColor: Colors.lightGreenAccent.withOpacity(0.5),
       ),
     );
   }
@@ -215,6 +258,13 @@ class _Login extends State<Login> {
         });
   }
 
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    print("called login first");
+  }
   @override
   Widget build(BuildContext context) {
 
@@ -252,9 +302,7 @@ class _Login extends State<Login> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
-                    _progress
-                        ? Center(child: new CircularProgressIndicator())
-                        : _buildLoginBtn(),
+                   _buildLoginBtn(),
 
                     Text(
                       'Forget Password?',

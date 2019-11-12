@@ -412,10 +412,15 @@ class StandardScreenPageState extends State<StandardScreenPage> {
                         Divider(
                           color: Colors.white,
                         ),
-                        Center(
-                          child: Text(
-                            "Gutscheincode",
-                            style: TextStyle(color: Colors.white),
+                        InkWell(
+                          onTap: (){
+                            _showDialog(copan: true);
+                          },
+                          child: Center(
+                            child: Text(
+                              "Gutscheincode",
+                              style: TextStyle(color: Colors.white),
+                            ),
                           ),
                         ),
                         Divider(
@@ -893,17 +898,17 @@ class StandardScreenPageState extends State<StandardScreenPage> {
   }
 
 
-  _showDialog(){
+  _showDialog({bool copan = false}){
     return showDialog(
       context: context,
       builder: (context){
         return AlertDialog(
-          title: Text("Enter your message for driver"),
+          title: Text(copan ? "Enter your copan code" : "Enter your message for driver"),
           content: Container(
             child: TextField(
               decoration: InputDecoration(
-                labelText: 'Message',
-                hintText: 'your message',
+                labelText: copan ? "Copane code" :'Message',
+                hintText: copan ? "" : 'your message',
                 labelStyle: TextStyle(color: Colors.black),
                 enabledBorder: UnderlineInputBorder(
                   borderSide:
@@ -921,15 +926,17 @@ class StandardScreenPageState extends State<StandardScreenPage> {
             FlatButton(
               child: Text("Cancel", style: TextStyle(color: Colors.red),),
               onPressed: (){
-                setState(() {
-                  notiz = SelectedLocationData(notiz: _controllerNote.text ?? "");
-                });
                 Navigator.pop(context);
               },
             ),
             FlatButton(
               child: Text("OK", style: TextStyle(color: Colors.green),),
-              onPressed: (){
+              onPressed: copan ? (){
+                Navigator.pop(context);
+              }:(){
+                setState(() {
+                  notiz = SelectedLocationData(notiz: _controllerNote.text ?? "");
+                });
                 Navigator.pop(context);
               },
             ),

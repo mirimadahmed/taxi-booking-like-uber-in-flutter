@@ -29,6 +29,9 @@ import './pages/auth/register.dart';
 import './models/userModel.dart';
 import 'pages/get_reset_link.dart';
 import 'package:google_maps_webservice/places.dart';
+import 'dart:async';
+import 'pages/paypal_payment.dart';
+
 
 
 
@@ -60,48 +63,25 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
 
   String id;
-  autoAuthenticate() async{
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    var response;
-    if(prefs.getString("user")!=null)
-      response = jsonDecode(prefs.getString("user"));
-    if(response != null){
-      setState(() {
-        currentUserModel =  User.fromMap(response);
+  var varifiedemail;
+  @override
+  void initState() {
+    SharedPreferences.getInstance().then((prefs){
+      setState((){
+        id = prefs.get("id");
+        varifiedemail = prefs.get("emailverified");
+        if(prefs.get("user") != null)
+        currentUserModel =  User.fromMap(jsonDecode(prefs.getString("user")));
         print("currentUserModel");
         print(currentUserModel.username);
       });
-    }
-
-
-    SharedPreferences.getInstance().then((res){
-      print("resres");
-      print(res.get("id"));
-      setState(() {
-        id = res.get("id");
-      });
     });
-  }
-  @override
-  void initState() {
     super.initState();
-    autoAuthenticate();
-//    _removeLocationPrefs().then((res){
-//      print("picup Location removed");
-//      print(res);
-//    });
-  }
 
-  _removeLocationPrefs()async{
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.remove("pickupLocation");
   }
-
   @override
   Widget build(BuildContext context) {
     Router router = Router();
-
-    // Define our splash page.
     router.define('/profile', handler: Handler(
         handlerFunc: (BuildContext context, Map<String, dynamic> params) {
       return ProfilePage();
@@ -132,8 +112,8 @@ class _MyAppState extends State<MyApp> {
     }));
     router.define('/', handler: Handler(
         handlerFunc: (BuildContext context, Map<String, dynamic> params) {
-//      return Login();
-      return id != null ? StandardScreenPage() : Login();
+      return
+       (id != null && varifiedemail != null) ? StandardScreenPage() : Login();
     }));
     router.define('/register', handler: Handler(
         handlerFunc: (BuildContext context, Map<String, dynamic> params) {
@@ -201,8 +181,10 @@ class _MyAppState extends State<MyApp> {
     router.define('/forget-password', handler: Handler(
         handlerFunc: (BuildContext context, Map<String, dynamic> params) {
           return GetResetLink();
+        }));router.define('/paypal_payment', handler: Handler(
+        handlerFunc: (BuildContext context, Map<String, dynamic> params) {
+          return PayPalPayment();
         }));
-
     return MaterialApp(
         debugShowCheckedModeBanner: false,
 //        home: ChooseTransportPage(),
@@ -213,6 +195,7 @@ class _MyAppState extends State<MyApp> {
           fontFamily: 'Gibson-Regular',
           textTheme: TextTheme(body1: TextStyle(fontSize: 16.0)),
         ),
-        onGenerateRoute: router.generator);
+        onGenerateRoute: router.generator,
+    );
   }
 }

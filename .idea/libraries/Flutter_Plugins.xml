@@ -9,6 +9,8 @@
       <root url="file://$PROJECT_DIR$/../flutter/flutter/.pub-cache/hosted/pub.dartlang.org/location-2.3.5" />
       <root url="file://$PROJECT_DIR$/../flutter/flutter/.pub-cache/hosted/pub.dartlang.org/firebase_core-0.4.0+8" />
       <root url="file://$PROJECT_DIR$/../flutter/flutter/.pub-cache/hosted/pub.dartlang.org/flutter_share-1.0.2+1" />
+      <root url="file://$PROJECT_DIR$/../flutter/flutter/.pub-cache/hosted/pub.dartlang.org/stripe_payment-1.0.5" />
+      <root url="file://$PROJECT_DIR$/../flutter/flutter/.pub-cache/hosted/pub.dartlang.org/flutter_webview_plugin-0.3.8" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

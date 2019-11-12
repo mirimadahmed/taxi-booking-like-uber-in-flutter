@@ -1,9 +1,14 @@
+import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:moover/main.dart';
-import 'package:moover/widgets/customSwitch.dart';
-//import 'package:stripe_payment/stripe_payment.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/rendering.dart';
+import 'package:stripe_payment/stripe_payment.dart';
+import 'package:cloud_firestore/cloud_firestore.dart' as fs;
+import 'package:shared_preferences/shared_preferences.dart';
+import '../main.dart';
+import 'environment_data/environment.dart';
+
+
 // This app is a stateful, it tracks the user's current choice.
 class PaymentsPage extends StatefulWidget {
 
@@ -13,18 +18,40 @@ class PaymentsPage extends StatefulWidget {
 
 class _PaymentsPageState extends State<PaymentsPage> with SingleTickerProviderStateMixin{
   TabController _tabController;
+  String pamentId;
   @override
   void initState() {
     _tabController = new TabController(length: 2, vsync: this);
     super.initState();
-//    StripePayment.setOptions(
-//        StripeOptions(publishableKey: "pk_test_aSaULNS8cJU6Tvo20VAXy6rp", merchantId: "Test", androidPayMode: 'test'));
+    SharedPreferences.getInstance().then((res){
+      if(res.get("pId") != null){
+        setState(() {
+          pamentId = res.get("pId");
+        });
+      }
+    });
+    StripePayment.setOptions(
+        StripeOptions(publishableKey: "pk_test_lWYy2obdjI3mHY9E4vkHAKFR00dgotF0DW", merchantId: "Test", androidPayMode: 'test'));
+
   }
+
+
+//  BillingAddress formFiling = BillingAddress(
+//    city: currentUserModel.city ?? "Faisalabad",
+//    name: currentUserModel.username,
+//    country: "pk",
+//    line1: "jhal",
+//    line2: "chwk",
+//    postalCode: "38000",
+//    state: "pakistan",
+//
+//  );
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
+        key: GlobalData.homeScaffoldKey,
         appBar: AppBar(
           elevation: 0.0,
           centerTitle: true,
@@ -53,7 +80,6 @@ class _PaymentsPageState extends State<PaymentsPage> with SingleTickerProviderSt
             children: <Widget>[
               Container(width: MediaQuery.of(context).size.width,height: 1.0,color: Colors.grey.withOpacity(0.3),),
               ListTile(
-
                 dense: true,
                 title: Text(
                   'Deine Bezahloptionen',
@@ -87,23 +113,34 @@ class _PaymentsPageState extends State<PaymentsPage> with SingleTickerProviderSt
                          actions: <Widget>[
                            CupertinoActionSheetAction(
                              child: const Text('Kreditkarte hinzufügen'),
-                             onPressed: () {
-//                               Navigator.pop(context, '🙋 Yes');
-//                               StripeSource.addSource().then((String token) {
-//                                 //Show card added successfully...
-//                                 Firestore.instance
-//                                     .collection('users')
-//                                     .document(currentUserModel.id)
-//                                     .collection('tokens')
-//                                     .document()
-//                                     .setData({'tokenId': token});
-//                               });
+                             onPressed: pamentId == null ? () {
+                               StripePayment.paymentRequestWithCardForm(CardFormPaymentRequest()).then((paymentMethod) {
+                                 fs.Firestore.instance.collection("cards").document(currentUserModel.id).collection("tokens").add({
+                                   "tokenId" : paymentMethod.id,
+                                 });
+                                 SharedPreferences.getInstance().then((res){
+                                   res.setString("pId", paymentMethod.id);
+                                   setState(() {
+                                     pamentId = paymentMethod.id;
+                                   });
+                                 });
+                                 fs.Firestore.instance.collection("cards").document(currentUserModel.id).setData({
+                                   "cust_id" : paymentMethod.customerId,
+                                   "email" : currentUserModel.email
+                                 });
+                               }).catchError(setError);
+                               Navigator.pop(context, '🙋 Yes');
+                             } : (){
+                               Navigator.pop(context, '🙋 Yes');
+                               GlobalData.homeScaffoldKey.currentState.showSnackBar(SnackBar(content: Text("You have alreade inserted card")));
                              },
                            ),
                            CupertinoActionSheetAction(
                              child: const Text('PayPal hinzufügen'),
                              onPressed: () {
-//                               Navigator.pop(context, '🙋 No');
+
+                               Navigator.pushNamed(context, 'paypal_payment');
+
                              },
                            ),
                          ],
@@ -254,7 +291,19 @@ class _PaymentsPageState extends State<PaymentsPage> with SingleTickerProviderSt
       ),
     );
   }
-  
+  void setError(dynamic error) {
+    print("paymetn error");
+    print(error.toString());
+//    GlobalData.homeScaffoldKey.currentState.showSnackBar(SnackBar(content: Text(error.toString())));
+//    setState(() {
+//      _error = error.toString();
+//    });
+  }
+//  final CreditCard testCard = CreditCard(
+//    number: '4000002760003184',
+//    expMonth: 12,
+//    expYear: 21,
+//  );
 }
 void showTwoItems(context){
   showCupertinoModalPopup(
@@ -283,11 +332,9 @@ void containerForSheet<T>({BuildContext context, Widget child}) {
     context: context,
     builder: (BuildContext context) => child,
   ).then<void>((T value) {
-    Scaffold.of(context).showSnackBar(new SnackBar(
-      content: new Text('You clicked $value'),
-      duration: Duration(milliseconds: 800),
-    ));
+//    GlobalData.homeScaffoldKey.currentState.showSnackBar(new SnackBar(
+//      content: new Text('You clicked $value'),
+//      duration: Duration(milliseconds: 800),
+//    ));
   });
 }
-
-

@@ -120,12 +120,15 @@ class _RegisterState extends State<Register>
         hintStyle:
             TextStyle(color: Colors.grey[500], fontSize: 18.0, height: 1.6),
         contentPadding: EdgeInsets.only(top: 4.0, bottom: 4.0, right: 10.0),
-        prefixIcon: Icon(Icons.person),
+        prefixIcon: Icon(Icons.person, color: Colors.grey,),
       ),
       style: TextStyle(height: 0.8, color: Colors.black, fontSize: 18.0),
       validator: (String val) {
         if (val.trim().isEmpty) {
           return "This field can't be left empty";
+        }
+        else {
+          return null;
         }
       },
       onSaved: (value) {
@@ -134,40 +137,33 @@ class _RegisterState extends State<Register>
     );
   }
 
-  Widget userCity() {
-    return Container(
-        width: MediaQuery.of(context).size.width,
-        decoration: BoxDecoration(
-            border: Border.all(
-              color: Colors.white,
-            ),
-            borderRadius: const BorderRadius.all(
-              const Radius.circular(10.0),
-            )),
-        child: DropdownButtonHideUnderline(
-            child: ButtonTheme(
-                alignedDropdown: true,
-                child: DropdownButton<String>(
-                  hint: Text(
-                    "City",
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  value: city,
-                  style: TextStyle(color: Colors.grey),
-                  items: <String>['Berlin', 'Lahore'].map((String value) {
-                    return new DropdownMenuItem<String>(
-                      value: value,
-                      child: new Text(
-                        value,
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      city = value;
-                    });
-                  },
-                ))));
+  Widget _buildLocationTextField() {
+    return TextFormField(
+      decoration: InputDecoration(
+        fillColor: Color(0xFFf7f6f6),
+        filled: true,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.0),
+        ),
+        hintText: 'Enter city',
+        hintStyle:
+        TextStyle(color: Colors.grey[500], fontSize: 18.0, height: 1.6),
+        contentPadding: EdgeInsets.only(top: 4.0, bottom: 4.0, right: 10.0),
+        prefixIcon: Icon(Icons.location_on, color: Colors.grey,),
+      ),
+      style: TextStyle(height: 0.8, color: Colors.black, fontSize: 18.0),
+      validator: (String val) {
+        if (val.trim().isEmpty) {
+          return "This field can't be left empty";
+        }
+        else{
+          return null;
+        }
+      },
+      onSaved: (value) {
+        city = value;
+      },
+    );
   }
 
   @override
@@ -258,7 +254,7 @@ class _RegisterState extends State<Register>
                           userGender(),SizedBox(
                             height: 20,
                           ),
-//                        userCity(),
+                          _buildLocationTextField(),
                           SizedBox(
                             height: 50,
                           ),
@@ -283,6 +279,7 @@ class _RegisterState extends State<Register>
                                                   _selected.toCountryStringOnly(),
                                               gender: _gender,
                                               userName: _name,
+                                              city: city,
                                               phone: _selected.dialCode + _num,
                                       lat: lat,
                                         lng: lng,

@@ -112,11 +112,7 @@ class AuthModel {
   }
 
 
-  Future registerInfo({userName, phone, location, gender, lat, lng}) async {
-
-
-
-
+  Future registerInfo({userName, phone, city, location, gender, lat, lng}) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     String userId = prefs.getString('id');
     String email = prefs.getString("email");
@@ -141,6 +137,7 @@ class AuthModel {
             "email": email,
             "gender": gender,
             "location": location,
+            "city" : city,
             "phone": phone,
             "dob": "",
             "rides": {},

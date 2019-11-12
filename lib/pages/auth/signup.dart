@@ -59,6 +59,9 @@ class _Login extends State<SignUp> {
         if (value.trim().isEmpty || !regex.hasMatch(value)) {
           return "Invalid Email";
         }
+        else{
+          return null;
+        }
       },
       onSaved: (String value) {
         _email = value;
@@ -93,6 +96,9 @@ class _Login extends State<SignUp> {
         if (val.trim().length < 6) {
           return "Password must be atleast six characters long";
         }
+        else{
+          return null;
+        }
       },
     );
   }
@@ -125,6 +131,7 @@ class _Login extends State<SignUp> {
           } else if (_passwordController.text != value) {
             return "Passwords must match";
           }
+          return null;
         },
         onSaved: (String value) {
           _password = value;
