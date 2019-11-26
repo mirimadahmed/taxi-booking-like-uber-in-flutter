@@ -35,6 +35,8 @@ dependencies:
   intl:
   flutter_share:
   flutter_webview_plugin:
+  firebase_database:
+  adhara_socket_io:
 dev_dependencies:
   flutter_test:
     sdk: flutter

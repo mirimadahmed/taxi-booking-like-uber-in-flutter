@@ -33,7 +33,6 @@ class SearchPage extends StatefulWidget {
 }
 
 
-const kGoogleApiKey = "AIzaSyB81xMeMewP3-P3KyUloVMJnvVEhgfHgrI";
 final _searchScaffoldKey = GlobalKey<ScaffoldState>();
 
 GoogleMapsPlaces _places = GoogleMapsPlaces(apiKey: kGoogleApiKey);

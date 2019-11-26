@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
+import 'package:adhara_socket_io/adhara_socket_io.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -18,7 +20,6 @@ import '../widgets/drawer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_maps_webservice/places.dart';
 
-const kGoogleApiKey = "AIzaSyB81xMeMewP3-P3KyUloVMJnvVEhgfHgrI";
 
 class StandardScreenPage extends StatefulWidget {
   @override
@@ -113,6 +114,7 @@ class StandardScreenPageState extends State<StandardScreenPage> {
   @override
   void initState() {
     super.initState();
+
     _controllerNote = TextEditingController();
       getUserLocation().then((currentLocations)async{
 
@@ -151,6 +153,9 @@ class StandardScreenPageState extends State<StandardScreenPage> {
     // TODO: implement dispose
     super.dispose();
   }
+
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -473,6 +478,7 @@ class StandardScreenPageState extends State<StandardScreenPage> {
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10)),
                             onPressed: () {
+
                               setState(() {
                                 selectedAmount = SelectedLocationData(amount: amount.toString());
                               });
@@ -829,8 +835,8 @@ class StandardScreenPageState extends State<StandardScreenPage> {
         print(res);
         List<Steps> rr = res["steps"];
         print("distancedistance");
-
         print(res["distance"]);
+
         setState(() {
           distance = SelectedLocationData(distance: res["distance"].toString());
         });
@@ -950,6 +956,8 @@ class StandardScreenPageState extends State<StandardScreenPage> {
     );
   }
 }
+
+
 
 
 

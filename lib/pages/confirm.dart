@@ -1,15 +1,19 @@
+
 import 'dart:convert';
 
+import 'package:adhara_socket_io/adhara_socket_io.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:moover/main.dart';
 import 'package:moover/pages/standardscreen.dart';
-import 'package:moover/widgets/drawer.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:async';
-import 'package:geocoder/geocoder.dart';
 import 'package:moover/widgets/network.dart';
+import 'package:moover/widgets/route.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 class ConfirmPage extends StatefulWidget {
+
   @override
   State<StatefulWidget> createState() {
     return ConfirmPageState();
@@ -17,6 +21,8 @@ class ConfirmPage extends StatefulWidget {
 }
 
 class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin {
+  final Firestore _firestore = Firestore.instance;
+  final FirebaseDatabase database = FirebaseDatabase.instance;
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   Completer<GoogleMapController> _controller = Completer();
   GoogleMapController mapController;
@@ -33,6 +39,8 @@ class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin 
   @override
   void initState() {
     super.initState();
+    manager = SocketIOManager();
+    _socketConnect();
     print(picData.lat);
     print(picData.lng);
     Future.delayed(Duration(seconds: 2), (){
@@ -73,11 +81,149 @@ class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin 
   void dispose() {
     // TODO: implement dispose
     super.dispose();
+    disconnect();
+  }
 
+
+
+
+  List userData = [
+    {
+      "userid": currentUserModel.id,
+      "username" : currentUserModel.username,
+      "phone" : currentUserModel.phone,
+      "photoUrl" : currentUserModel.photoUrl,
+      "rating" : currentUserModel.rating
+    }
+  ];
+  SocketIOManager manager;
+  SocketIO socket;
+  String socketUrl = "https://moover-server.herokuapp.com/";
+  String socketUrllocal = "http://localhost:3000";
+  String socketUrllocal1 = "http://192.168.10.5:3000";
+  List<String> toPrint = ["trying to connect"];
+
+  _socketConnect()async{
+
+    socket = await manager.createInstance(SocketOptions(
+      socketUrl,
+      enableLogging: true,
+      query: {
+        "auth": "--SOME AUTH STRING---",
+        "info": "new connection from adhara-socketio",
+        "timestamp": DateTime.now().toString()
+      },
+      transports: [Transports.WEB_SOCKET, Transports.POLLING],
+
+    ));
+    socket.onConnect((res){
+      print("Connected..");
+      print(res);
+      sendMessage();
+    });
+    socket.on("got ride", (data) => gotRide(data));
+    socket.on("user back", (data) => pprint);
+//    socket.on("driver location", (data) => handleListen(data));
+    socket.onConnectError(pprint);
+    socket.onConnectTimeout(pprint);
+    socket.onError(pprint);
+    socket.onDisconnect(pprint);
+    socket.connect();
+  }
+
+
+
+  bool isgot = false;
+
+  gotRide(data)async{
+    await checkRide(data);
+    print("got rides");
+    print(data.toString());
+    if(data["userId"] == currentUserModel.id && isgot == false){
+      setState(() {
+        controller.dispose();
+        controller = null;
+        riderdata = data;
+        isgot = true;
+      });
+      database.reference().child("ride").child(riderdata["key"]).onValue.listen((res)async{
+        print("driver update data");
+        if(mounted || res.snapshot.value["driverLat"] != null)
+        setState(() {
+          markers[MarkerId(riderdata["id"])] = Marker(
+            markerId: MarkerId(riderdata["id"]),
+            draggable: true,
+            position: LatLng(res.snapshot.value["driverLat"], res.snapshot.value["driverlng"]),
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+              BitmapDescriptor.hueOrange,
+            ),
+//         infoWindow: InfoWindow(title: "Your Location", snippet: 'Pickup'),
+//         onTap: () => _onMarkerTapped(
+//           MarkerId("345"),
+//         ),
+          );
+        });
+        await getPolyline(picData.lat, picData.lng, res.snapshot.value["driverLat"], res.snapshot.value["driverlng"]);
+      });
+    }
+  }
+
+  Map _driverlocationUpdated = Map();
+  handleListen(data)async{
+    print("updated driver location");
+    if(data.key == riderdata["key"]) {
+      setState(() {
+        _driverlocationUpdated = data;
+        markers[MarkerId(riderdata["id"])] = Marker(
+          markerId: MarkerId(riderdata["id"]),
+          draggable: true,
+          position: LatLng(data["driverLat"], riderdata["driverlng"]),
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueOrange,
+          ),
+//         infoWindow: InfoWindow(title: "Your Location", snippet: 'Pickup'),
+//         onTap: () => _onMarkerTapped(
+//           MarkerId("345"),
+//         ),
+        );
+      });
+      await getPolyline(picData.lat, picData.lng, data["driverLat"], riderdata["driverlng"]);
+    }
+  }
+
+  Map riderdata = Map();
+  checkRide(data){
+    if(riderdata["isBooked"] == true){
+      SharedPreferences.getInstance().then((res){
+        res.setBool("isBook", riderdata["isBooked"]);
+      });
+    }
+  }
+
+
+  disconnect() async {
+    await manager.clearInstance(socket);
+  }
+
+  sendMessage() {
+    if (socket!= null) {
+      socket.emit("connect user", userData);
+    }
+  }
+
+  pprint(data) {
+    setState(() {
+      if (data is Map) {
+        data = json.encode(data);
+      }
+      print(data);
+      toPrint.add(data);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+
     return SafeArea(
       bottom: true,
       top: false,
@@ -116,7 +262,7 @@ class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin 
                 Container(
                     height: MediaQuery.of(context).size.height,
                     width: MediaQuery.of(context).size.width,
-                    child: GoogleMap(
+                    child: !_ploylineMap ? GoogleMap(
                       myLocationButtonEnabled: false,
                       compassEnabled: false,
                       scrollGesturesEnabled: false,
@@ -126,6 +272,13 @@ class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin 
                         onMapCreated: (GoogleMapController controller) {
                           mapController=controller;
                         },
+                    ) : GoogleMap(
+                      markers: Set<Marker>.of(markers.values),
+                      polylines: Set<Polyline>.of(polylines.values),
+                      initialCameraPosition: _kGooglePlex,
+                      onMapCreated: (GoogleMapController controller) {
+                        mapController = controller;
+                      },
                     )),
                controller != null ? Container():Container(
                   margin: EdgeInsets.symmetric(horizontal: 20),
@@ -293,26 +446,126 @@ class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin 
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10)),
                               onPressed: () {
-                                setState(() {
-                                  controller = AnimationController(
-                                      duration: const Duration(milliseconds: 500), vsync: this);
-                                  animation = CurvedAnimation(parent: controller, curve: Curves.easeIn);
-                                  animation.addStatusListener((status) {
-                                    if (status == AnimationStatus.completed) {
-                                      controller.reverse();
-                                    } else if (status == AnimationStatus.dismissed) {
-                                      controller.forward();
-                                    }
-                                  });
-                                  controller.forward();
-                                });
-                                Future.delayed(Duration(seconds: 5), (){
+
+//                                itemRef.push().set({
+//                                  "id" : currentUserModel.id,
+//                                  "pLat" : picData.lat,
+//                                  "pLng" : picData.lng,
+//                                  "dLat" : dropData.lng,
+//                                  "dLng" : dropData.lng,
+//                                  "pAdderss" : PicAddress,
+//                                  "dAdderss" : DestAsddress,
+//                                  "distance" : distance.distance,
+//                                  "amount" : selectedAmount.amount,
+//                                  "riderRank" : currentUserModel.rating.toString(),
+//                                  "name" : currentUserModel.username,
+//                                  "phone" : currentUserModel.phone,
+//                                  "photo" : currentUserModel.photoUrl,
+//                                  "timestamp" : DateTime.now().millisecondsSinceEpoch.toString(),
+//                                  "isBooked" : false
+//                                }).then((_){
+//                                  setState(() {
+//                                    controller = AnimationController(
+//                                        duration: const Duration(milliseconds: 500), vsync: this);
+//                                    animation = CurvedAnimation(parent: controller, curve: Curves.easeIn);
+//                                    animation.addStatusListener((status) {
+//                                      if (status == AnimationStatus.completed) {
+//                                        controller.reverse();
+//                                      } else if (status == AnimationStatus.dismissed) {
+//                                        controller.forward();
+//                                      }
+//                                    });
+//                                    controller.forward();
+//                                  });
+//                                  Future.delayed(Duration(seconds: 5), (){
+//                                    setState(() {
+//                                      controller.dispose();
+//                                      controller = null;
+//                                    });
+//                                    _showSnackBar("There is no driver available for now");
+//                                  });
+//                                }).catchError((err) => print(err));
+
+                              var ridesData = [
+                                {
+                                  "id" : currentUserModel.id,
+                                  "pLat" : picData.lat,
+                                  "pLng" : picData.lng,
+                                  "dLat" : dropData.lat,
+                                  "dLng" : dropData.lng,
+                                  "pAdderss" : PicAddress,
+                                  "dAdderss" : DestAsddress,
+                                  "distance" : "${distance.distance} KM",
+                                  "amount" : selectedAmount.amount,
+                                  "riderRank" : currentUserModel.rating,
+                                  "name" : currentUserModel.username,
+                                  "phone" : currentUserModel.phone,
+                                  "photo" : currentUserModel.photoUrl,
+                                  "timestamp" : DateTime.now().millisecondsSinceEpoch.toString(),
+                                  "isBooked" : false
+                                }
+                              ];
+
+                                if(socket != null){
+                                  socket.emitWithAck("give ride", ridesData);
                                   setState(() {
-                                    controller.dispose();
-                                    controller = null;
+                                    controller = AnimationController(
+                                        duration: const Duration(milliseconds: 500), vsync: this);
+                                    animation = CurvedAnimation(parent: controller, curve: Curves.easeIn);
+                                    animation.addStatusListener((status) {
+                                      if (status == AnimationStatus.completed) {
+                                        controller.reverse();
+                                      } else if (status == AnimationStatus.dismissed) {
+                                        controller.forward();
+                                      }
+                                    });
+                                    controller.forward();
                                   });
-                                  _showSnackBar("There is no driver available for now");
-                                });
+                                }
+
+//                                var documentRefrence = _firestore.collection("riders").document(currentUserModel.id).collection("rides").document(DateTime.now().millisecondsSinceEpoch.toString());
+//                                _firestore.runTransaction((transation)async{
+//                                  await transation.set(documentRefrence, {
+//                                    "id" : currentUserModel.id,
+//                                      "pLat" : picData.lat,
+//                                      "pLng" : picData.lng,
+//                                      "dLat" : dropData.lng,
+//                                      "dLng" : dropData.lng,
+//                                      "pAdderss" : PicAddress,
+//                                      "dAdderss" : DestAsddress,
+//                                      "distance" : "${distance.distance} KM",
+//                                      "amount" : selectedAmount.amount,
+//                                      "riderRank" : currentUserModel.rating,
+//                                      "name" : currentUserModel.username,
+//                                      "phone" : currentUserModel.phone,
+//                                      "photo" : currentUserModel.photoUrl,
+//                                       "timestamp" : DateTime.now().millisecondsSinceEpoch.toString(),
+//                                       "isBooked" : false
+//                                  });
+//                                }).then((res){
+//                                  setState(() {
+//                                    controller = AnimationController(
+//                                        duration: const Duration(milliseconds: 500), vsync: this);
+//                                    animation = CurvedAnimation(parent: controller, curve: Curves.easeIn);
+//                                    animation.addStatusListener((status) {
+//                                      if (status == AnimationStatus.completed) {
+//                                        controller.reverse();
+//                                      } else if (status == AnimationStatus.dismissed) {
+//                                        controller.forward();
+//                                      }
+//                                    });
+//                                    controller.forward();
+//                                  });
+//                                  Future.delayed(Duration(seconds: 5), (){
+//                                    setState(() {
+//                                      controller.dispose();
+//                                      controller = null;
+//                                    });
+//                                    _showSnackBar("There is no driver available for now");
+//                                  });
+//                                  print(res.toString());
+//                                }).catchError((err){print(err);});
+
                               } ,
                               child: Text(
                                "WEITER",
@@ -352,6 +605,76 @@ class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin 
     );
   }
 
+
+  bool _ploylineMap = false;
+  Map<PolylineId, Polyline> polylines = <PolylineId, Polyline>{};
+  Future getPolyline(originLat,originLng,destLat,destLng) async {
+    print("user pickup");
+    print(destLat);
+    print(destLng);
+    try{
+      await network
+          .get("origin=" +
+          originLat.toString() +
+          "," +
+          originLng.toString() +
+          "&destination=" +
+          destLat.toString() +
+          "," +
+          destLng.toString() +
+          "&mode=walking&key=$kGoogleApiKey")
+          .then((dynamic res) {
+        print(res);
+        polylines.clear();
+        ccc.clear();
+        List<Steps> rr = res["steps"];
+        for (final i in rr) {
+          print("i.polyline");
+          print(i.polyline);
+          decodePoly(i.polyline);
+        }
+      });
+      if(mounted)
+        setState(() {
+          _ploylineMap = true;
+          polylines[PolylineId("poly1")] = Polyline(polylineId: PolylineId("poly1"),points: ccc, width: 5);
+        });
+    }catch(_){
+      setState(() {
+        _showSnackBar("Some thing went wrong");
+      });
+    }
+  }
+  List<LatLng> ccc = [];
+  void decodePoly(String encoded) {
+    int index = 0, len = encoded.length;
+    int lat = 0, lng = 0;
+    while (index < len) {
+      var b, shift = 0, result = 0;
+      do {
+        var asc = encoded.codeUnitAt(index++);
+        b = asc - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lat += dlat;
+
+      shift = 0;
+      result = 0;
+      do {
+        var asc = encoded.codeUnitAt(index++);
+        b = asc - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lng += dlng;
+      ccc.add(LatLng(lat / 100000.0, lng / 100000.0));
+    }
+  }
+
+
   void _showSnackBar(message) {
     _scaffoldKey.currentState.showSnackBar(SnackBar(
       backgroundColor: Colors.black,
@@ -360,9 +683,6 @@ class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin 
     ));
   }
 }
-
-
-
 
 
 
