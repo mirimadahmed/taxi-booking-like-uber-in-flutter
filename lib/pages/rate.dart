@@ -1,9 +1,18 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:moover/pages/standardscreen.dart';
+import 'package:moover/pages/star_rating.dart';
+import 'package:page_transition/page_transition.dart';
 import '../widgets/drawer.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:async';
 
 class RatePage extends StatefulWidget {
+  final String imageUrl;
+  final String name;
+  final String rating;
+  final String driverId;
+  const RatePage({Key key, this.imageUrl, this.name, this.rating, this.driverId}) : super(key: key);
   @override
   _RatePageState createState() => _RatePageState();
 }
@@ -17,7 +26,8 @@ class _RatePageState extends State<RatePage> {
   );
 
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
+  var rating = 0.0;
+  bool endRite = false;
   @override
   void dispose() {
     // TODO: implement dispose
@@ -60,9 +70,14 @@ class _RatePageState extends State<RatePage> {
                             child: SizedBox(
                               width: 100,
                               height: 100,
-                              child:
-                              Image.asset(
-                                'assets/profileImage.jpg',
+                              child:widget.imageUrl == null ? Container(
+                                width: 100,
+                                height: 100,
+                                child: Icon(Icons.person, color: Colors.grey,),
+                                color: Colors.white,
+                              ) :
+                              Image.network(
+                                widget.imageUrl,
                               ),
                             )
                         ),
@@ -77,27 +92,31 @@ class _RatePageState extends State<RatePage> {
                           width: 23,
                           height: 23,
                           child: Center(
-                            child: Text("49", style: TextStyle(color: Colors.white)),
+                            child: Text(rating.toString(), style: TextStyle(color: Colors.white)),
                           ),
                         ),
                       )
                     ],
                   ),
                   SizedBox(height:10,),
-                  Text("Alex",style: TextStyle(color:  Color.fromRGBO(112, 112, 112, 1.0) ,fontWeight: FontWeight.bold,fontSize: 18),),
+                  Text(widget.name ?? "",style: TextStyle(color:  Color.fromRGBO(112, 112, 112, 1.0) ,fontWeight: FontWeight.bold,fontSize: 18),),
+//                  SizedBox(height:30,),
+//                  Text("22,34 €",style: TextStyle(color: Color.fromRGBO(112, 112, 112, 1.0), fontWeight: FontWeight.bold, fontSize: 24),),
                   SizedBox(height:30,),
-                  Text("22,34 €",style: TextStyle(color: Color.fromRGBO(112, 112, 112, 1.0), fontWeight: FontWeight.bold, fontSize: 24),)
-                  ,SizedBox(height:30,),
                   Text("Bewerte deine Fahrt",style: TextStyle(color: Color.fromRGBO(112, 112, 112, 1.0), fontSize: 16),),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Icon(Icons.star,color: Color.fromRGBO(255, 185, 0, 1),size: 30,),
-                      Icon(Icons.star,color: Color.fromRGBO(255, 185, 0, 1),size: 30,),
-                      Icon(Icons.star,color: Color.fromRGBO(255, 185, 0, 1),size: 30,),
-                      Icon(Icons.star,color: Color.fromRGBO(255, 185, 0, 1),size: 30,),
-                      Icon(Icons.star,color: Color.fromRGBO(70, 78, 99, 1),size: 30,)
-                    ],),
+                  SmoothStarRating(
+                    rating: rating,
+                    color: Colors.yellow,
+                    borderColor: Colors.grey,
+                    starCount: 5,
+                    size: 20,
+                    spacing: 2.0,
+                    onRatingChanged: (valuRating){
+                      setState(() {
+                        rating = valuRating;
+                      });
+                    },
+                  ),
 
                   SizedBox(height:30,),
                   ButtonTheme(
@@ -105,8 +124,16 @@ class _RatePageState extends State<RatePage> {
                     child: RaisedButton(
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       padding: EdgeInsets.symmetric(vertical: 10),
-                      onPressed: (){
-                        Navigator.pushReplacementNamed(context, "/");
+                      onPressed: endRite ? null : (){
+                        setState(() {
+                          endRite = true;
+                        });
+                        Firestore.instance.collection("drivers").document(widget.driverId).updateData({
+                          "rating" : rating,
+                        }).then((_){
+                          Navigator.of(context).pushReplacement(PageTransition(child: StandardScreenPage(), type: PageTransitionType.rightToLeft, curve: Curves.fastOutSlowIn));
+                        });
+
                       },child: Text("BEWERTUNG ABGEBEN",style: TextStyle(color: Colors.white,fontSize: 13),),color:Color.fromRGBO(64, 236, 120, 1.0),),),
                   SizedBox(height:10,),
                 ],),),),

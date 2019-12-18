@@ -108,7 +108,7 @@ class _MyAppState extends State<MyApp> {
     }));
     router.define('/rides', handler: Handler(
         handlerFunc: (BuildContext context, Map<String, dynamic> params) {
-      return DrivesPage();
+      return HistoryPage();
     }));
     router.define('/', handler: Handler(
         handlerFunc: (BuildContext context, Map<String, dynamic> params) {
@@ -181,7 +181,9 @@ class _MyAppState extends State<MyApp> {
     router.define('/forget-password', handler: Handler(
         handlerFunc: (BuildContext context, Map<String, dynamic> params) {
           return GetResetLink();
-        }));router.define('/paypal_payment', handler: Handler(
+        }));
+
+    router.define('/paypal_payment', handler: Handler(
         handlerFunc: (BuildContext context, Map<String, dynamic> params) {
           return PayPalPayment();
         }));

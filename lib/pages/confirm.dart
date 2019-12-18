@@ -1,17 +1,22 @@
 
 import 'dart:convert';
-
+import 'package:flutter/cupertino.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:adhara_socket_io/adhara_socket_io.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:moover/main.dart';
+import 'package:moover/pages/rate.dart';
 import 'package:moover/pages/standardscreen.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:async';
 import 'package:moover/widgets/network.dart';
 import 'package:moover/widgets/route.dart';
+import 'package:page_transition/page_transition.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'payment.dart';
 class ConfirmPage extends StatefulWidget {
 
   @override
@@ -21,6 +26,7 @@ class ConfirmPage extends StatefulWidget {
 }
 
 class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin {
+
   final Firestore _firestore = Firestore.instance;
   final FirebaseDatabase database = FirebaseDatabase.instance;
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
@@ -28,6 +34,7 @@ class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin 
   GoogleMapController mapController;
   Map<MarkerId,Marker> markers = <MarkerId,Marker>{};
   NetworkUtil network = new NetworkUtil();
+  var duration = "0.0 mins";
   static final CameraPosition _kGooglePlex = CameraPosition(
     target: LatLng(picData.lat, picData.lng),
     zoom: 17.0,
@@ -36,6 +43,8 @@ class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin 
   String PicAddress;
   AnimationController controller;
   Animation<double> animation;
+  bool driverView = false;
+  bool lottiePlay = false;
   @override
   void initState() {
     super.initState();
@@ -132,6 +141,10 @@ class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin 
   }
 
 
+  endRide(){
+    print("finished");
+
+  }
 
   bool isgot = false;
 
@@ -141,29 +154,45 @@ class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin 
     print(data.toString());
     if(data["userId"] == currentUserModel.id && isgot == false){
       setState(() {
-        controller.dispose();
-        controller = null;
+        lottiePlay = false;
         riderdata = data;
         isgot = true;
       });
       database.reference().child("ride").child(riderdata["key"]).onValue.listen((res)async{
-        print("driver update data");
-        if(mounted || res.snapshot.value["driverLat"] != null)
-        setState(() {
-          markers[MarkerId(riderdata["id"])] = Marker(
-            markerId: MarkerId(riderdata["id"]),
-            draggable: true,
-            position: LatLng(res.snapshot.value["driverLat"], res.snapshot.value["driverlng"]),
-            icon: BitmapDescriptor.defaultMarkerWithHue(
-              BitmapDescriptor.hueOrange,
-            ),
+        try{
+          print("driver update data");
+          if(mounted || res.snapshot.value["driverLat"] != null)
+            setState(() {
+              markers[MarkerId(riderdata["id"])] = Marker(
+                markerId: MarkerId(riderdata["id"]),
+                draggable: true,
+                position: LatLng(res.snapshot.value["driverLat"], res.snapshot.value["driverlng"]),
+                icon: BitmapDescriptor.defaultMarkerWithHue(
+                  BitmapDescriptor.hueOrange,
+                ),
 //         infoWindow: InfoWindow(title: "Your Location", snippet: 'Pickup'),
 //         onTap: () => _onMarkerTapped(
 //           MarkerId("345"),
 //         ),
-          );
-        });
-        await getPolyline(picData.lat, picData.lng, res.snapshot.value["driverLat"], res.snapshot.value["driverlng"]);
+              );
+            });
+          await getPolyline(picData.lat, picData.lng, res.snapshot.value["driverLat"], res.snapshot.value["driverlng"]);
+        }catch(e){
+          print(e.toString());
+        }
+      });
+      database.reference().child("ride").child(riderdata["key"]).onChildRemoved.listen((_){
+        database.reference().child("ride").child(riderdata["key"]).onValue.listen((_){}).cancel();
+        database.reference().child("ride").child(riderdata["key"]).onChildRemoved.listen((_){}).cancel();
+             Navigator.of(context).pushReplacement(PageTransition(type: PageTransitionType.rightToLeft
+             ,child: RatePage(
+                   imageUrl: riderdata["photoUrl"],
+                   name: riderdata["username"],
+                   rating: riderdata["rating"].toString(),
+                   driverId: riderdata["id"],
+             ),
+               curve: Curves.fastOutSlowIn
+             ),);
       });
     }
   }
@@ -202,6 +231,7 @@ class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin 
 
 
   disconnect() async {
+    print("dissconnecttd");
     await manager.clearInstance(socket);
   }
 
@@ -223,7 +253,8 @@ class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin 
 
   @override
   Widget build(BuildContext context) {
-
+    double w = MediaQuery.of(context).size.width;
+    double h = MediaQuery.of(context).size.height;
     return SafeArea(
       bottom: true,
       top: false,
@@ -232,21 +263,21 @@ class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin 
       child: Scaffold(
 //      backgroundColor: Colors.transparent,
         appBar: AppBar(
-          title: controller == null ? Text("") : InkWell(
-            child: Text("Cancel"),
-            onTap: (){
+          title: !isgot && controller == null ? Text("") : InkWell(
+            child: !isgot ? Text("Cancel") : Text(""),
+            onTap: !isgot ? (){
               setState(() {
                 controller.dispose();
                 controller = null;
               });
-            },
+            } : null,
           ),
           leading: IconButton(
               icon: Icon(
                Icons.arrow_back,
-                color: controller != null ? Colors.transparent : Color.fromRGBO(64, 236, 120, 1.0),
+                color: lottiePlay && !isgot ? Colors.transparent : !isgot ? Color.fromRGBO(64, 236, 120, 1.0) : Colors.transparent,
               ),
-              onPressed:controller != null ? null : () {
+              onPressed:lottiePlay && !isgot ? null : () {
                 Navigator.of(context).pop();
               }
               ),
@@ -280,7 +311,11 @@ class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin 
                         mapController = controller;
                       },
                     )),
-               controller != null ? Container():Container(
+                lottiePlay ? Container(
+
+               ):
+
+               Container(
                   margin: EdgeInsets.symmetric(horizontal: 20),
                   padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                   height: 105.0,
@@ -390,7 +425,7 @@ class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin 
                     ],
                   ),
                 ),
-                controller == null ? Positioned(
+                !isgot && !lottiePlay ? Positioned(
                     bottom: 0,
                     child: Container(
                       decoration: BoxDecoration(
@@ -420,21 +455,35 @@ class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin 
                             style: TextStyle(color: Colors.white,fontSize: 14),
                           ),
 
-                          SizedBox(
-                            height: 20,
-                          ),
-                          Text(
-                            "Betrag",
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600),
-                          ), Text(
-                            "${selectedAmount.amount ?? ""} €",
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 22,
-                                fontWeight: FontWeight.w600),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: <Widget>[
+                             InkWell(
+                          onTap: progreeDialog ? null :(){
+                            _showDialogPaypal();
+                          },
+                               child: Container(
+                                 width: w*0.2,
+                                 child: Image.asset("assets/paypal.png", fit: BoxFit.fill),
+                               ),
+                             ),
+                              Text(
+                                "${selectedAmount.amount ?? ""} €",
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w600),
+                              ),
+                              InkWell(
+                                onTap:progreeDialog ? null : (){
+                                  _showDialog();
+                                },
+                                child: Container(
+                                  width: w*0.1,
+                                  child: Image.asset("assets/stripe.png", fit: BoxFit.fill,),
+                                ),
+                              ),
+                            ],
                           ),
                           SizedBox(
                             height: 20,
@@ -445,7 +494,7 @@ class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin 
                               padding: EdgeInsets.symmetric(vertical: 15),
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10)),
-                              onPressed: () {
+                              onPressed: !progreeDialog ? null :  () {
 
 //                                itemRef.push().set({
 //                                  "id" : currentUserModel.id,
@@ -488,6 +537,7 @@ class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin 
 
                               var ridesData = [
                                 {
+                                  "note" : notiz.notiz,
                                   "id" : currentUserModel.id,
                                   "pLat" : picData.lat,
                                   "pLng" : picData.lng,
@@ -495,7 +545,7 @@ class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin 
                                   "dLng" : dropData.lng,
                                   "pAdderss" : PicAddress,
                                   "dAdderss" : DestAsddress,
-                                  "distance" : "${distance.distance} KM",
+                                  "distance" : "${distance.distance}",
                                   "amount" : selectedAmount.amount,
                                   "riderRank" : currentUserModel.rating,
                                   "name" : currentUserModel.username,
@@ -509,18 +559,38 @@ class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin 
                                 if(socket != null){
                                   socket.emitWithAck("give ride", ridesData);
                                   setState(() {
-                                    controller = AnimationController(
-                                        duration: const Duration(milliseconds: 500), vsync: this);
-                                    animation = CurvedAnimation(parent: controller, curve: Curves.easeIn);
-                                    animation.addStatusListener((status) {
-                                      if (status == AnimationStatus.completed) {
-                                        controller.reverse();
-                                      } else if (status == AnimationStatus.dismissed) {
-                                        controller.forward();
-                                      }
-                                    });
-                                    controller.forward();
+                                    lottiePlay = true;
                                   });
+                                  Future.delayed(Duration(seconds: 15),(){
+                                    if(!isgot){
+                                      setState(() {
+                                        lottiePlay = false;
+                                      });
+                                      return _showSnackBar("There is no driver available for now");
+                                    }
+                                  });
+//                                  setState(() {
+//                                    controller = AnimationController(
+//                                        duration: const Duration(milliseconds: 500), vsync: this);
+//                                    animation = CurvedAnimation(parent: controller, curve: Curves.easeIn);
+//                                    animation.addStatusListener((status) {
+//                                      if (status == AnimationStatus.completed) {
+//                                        controller.reverse();
+//                                      } else if (status == AnimationStatus.dismissed) {
+//                                        controller.forward();
+//                                      }
+//                                    });
+//                                    controller.forward();
+//                                    Future.delayed(Duration(seconds: 15),(){
+//                                      if(!isgot){
+//                                        setState(() {
+//                                          controller.dispose();
+//                                          controller = null;
+//                                        });
+//                                        return _showSnackBar("There is no driver available for now");
+//                                      }
+//                                    });
+//                                  });
                                 }
 
 //                                var documentRefrence = _firestore.collection("riders").document(currentUserModel.id).collection("rides").document(DateTime.now().millisecondsSinceEpoch.toString());
@@ -582,23 +652,194 @@ class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin 
                         ],
                       ),
                     )) :
-                Positioned(
-                  top: 0,
-                  child: FadeTransition(
-                    opacity: animation,
-                    child: Container(
-                      width: MediaQuery.of(context).size.width,
-                      height: 200,
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.5),
-                        borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
-                      ),
-                      child: Center(
-                        child: Text("Finding your driver", style: TextStyle(color: Colors.white, fontSize: 20),),
-                      ),
+                lottiePlay ?
+//                Positioned(
+//                  top: 0,
+//                  child: FadeTransition(
+//                    opacity: animation,
+//                    child: Container(
+//                      width: MediaQuery.of(context).size.width,
+//                      height: 200,
+//                      decoration: BoxDecoration(
+//                        color: Colors.blue.withOpacity(0.5),
+//                        borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
+//                      ),
+//                      child: Center(
+//                        child: Text("Finding your driver", style: TextStyle(color: Colors.white, fontSize: 20),),
+//                      ),
+//                    ),
+//                  ),
+//                )
+
+                Align(
+                  alignment: Alignment.center,
+                  child: Stack(
+                    children:[
+                      SpinKitRipple(
+                      color: Colors.green,
+                      size: MediaQuery.of(context).size.width,
+                      controller: AnimationController(vsync: this, duration: const Duration(milliseconds: 1000)),
                     ),
+                      SpinKitPulse(
+                        color: Colors.green,
+                        size: MediaQuery.of(context).size.width,
+                        controller: AnimationController(vsync: this, duration: const Duration(milliseconds: 1000)),
+                      ),
+                    ]
                   ),
-                ),
+                )
+
+                         :
+                     Positioned(
+                          bottom: 0,
+                          child: Container(
+                            decoration: BoxDecoration(
+                                color: Color.fromRGBO(64, 236, 120, 1.0),
+                                borderRadius:
+                                BorderRadius.vertical(top: Radius.circular(10))),
+                            padding: EdgeInsets.all(10),
+//                    height: 30,
+                            width: MediaQuery.of(context).size.width,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                Center(
+                                  child: InkWell(
+                                    onTap: (){
+                                      setState(() {
+                                        driverView = !driverView;
+                                      });
+                                    },
+                                    child: Column(
+                                      children: <Widget>[
+                                        Text(!driverView ? "Hide" : "Show", style: TextStyle(color: Colors.white),),
+                                        Icon(!driverView ?Icons.arrow_downward : Icons.arrow_upward, color: Colors.white,),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                driverView ? Container() :
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: <Widget>[
+                                    SizedBox(
+                                      height: 10,
+                                    ),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: <Widget>[
+                                        Text(
+                                          "Voraussichtliche Wartezeit: $duration",
+                                          style:
+                                          TextStyle(color: Colors.white, fontSize: 18),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(
+                                      height: 20,
+                                    ),
+                                    GestureDetector(
+
+//                                  onTap: ()=>Navigator.pushNamed(context, "/contact"),
+                                      child:  Row(
+                                        children: <Widget>[
+                                          riderdata["photoUrl"] != null ? ClipRRect(
+                                            child: Container(
+                                              color: Colors.white,
+                                              child: Image.network(
+                                                riderdata["photoUrl"],
+                                                width: 50,
+                                                height: 50,
+                                              ),
+                                            ),
+                                            borderRadius: BorderRadius.circular(10),
+                                          ) :
+                                          ClipRRect(
+                                            child: Container(
+                                              width: 50,
+                                              height: 50,
+                                              child: Icon(Icons.person, color: Colors.white,),
+                                              color: Colors.black,
+                                            ),
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          SizedBox(
+                                            width: 20,
+                                          ),
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: <Widget>[
+                                              Text(
+                                                riderdata["username"] ?? "",
+                                                style: TextStyle(
+                                                    fontSize: 16,
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.w600),
+                                              ),
+                                              Text(
+                                                "${riderdata["rating"]} Sterne",
+                                                style: TextStyle(
+                                                    fontSize: 14, color: Colors.white),
+                                              ),
+                                            ],
+                                          )
+                                        ],
+                                      ),),
+                                    Divider(
+                                      color: Colors.white,
+                                    ),
+                                    GestureDetector(child:  Row(
+                                      children: <Widget>[
+                                        ClipRRect(
+                                          child: Image.asset(
+                                            "assets/car.png",
+                                            width: 50,
+                                            height: 50,
+                                          ),
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        SizedBox(
+                                          width: 20,
+                                        ),
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: <Widget>[
+                                            Text(
+                                              "Mercedes Sprinter",
+                                              style: TextStyle(
+                                                  fontSize: 16,
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.w600),
+                                            ),
+                                            Text(
+                                              "inkl. Tragehilfe",
+                                              style: TextStyle(
+                                                  fontSize: 14, color: Colors.white),
+                                            ),
+                                          ],
+                                        ),
+                                        Expanded(child: Container()),
+                                        Container(
+                                          padding: EdgeInsets.all(5),
+                                          child: Text(
+                                            "22,34 €",
+                                            style: TextStyle(color: Colors.white),
+                                          ),
+                                          decoration: BoxDecoration(
+                                              borderRadius: BorderRadius.circular(10),
+                                              border: Border.all(color: Colors.white)),
+                                        )
+                                      ],
+                                    ),onTap: ()=>Navigator.of(context).push(AddMapOverlay()),),
+                                  ],
+                                ),
+
+                              ],
+                            ),
+                          ),
+                        )
+
+
               ],
             )),
       ),
@@ -628,6 +869,9 @@ class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin 
         polylines.clear();
         ccc.clear();
         List<Steps> rr = res["steps"];
+        setState(() {
+          duration = res["duration"];
+        });
         for (final i in rr) {
           print("i.polyline");
           print(i.polyline);
@@ -682,8 +926,83 @@ class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin 
       duration: Duration(seconds: 2),
     ));
   }
-}
 
+bool progreeDialog = false;
+  _showDialog(){
+    return showDialog(
+      context: context,
+      builder: (context){
+        return CupertinoAlertDialog(
+          title: Text("Accetp?"),
+          content: Text("Do you accept?"),
+          actions: <Widget>[
+            CupertinoDialogAction(child: Text("No"),
+              onPressed: (){
+                Navigator.of(context).pop();
+              },
+            ),
+            CupertinoDialogAction(child: Text("Yes"),
+              onPressed: (){
+              Navigator.of(context).pop();
+              SharedPreferences.getInstance().then((res){
+                if(res.get("pId") != null){
+                  Firestore.instance.collection("payments").document(currentUserModel.id).collection("charges").add({
+                    "amount" : int.parse(selectedAmount.amount) * 100,
+                    "currency" : "usd",
+                    "description" : "Payment for booking moover taxi"
+                  }).then((_){
+                    setState(() {
+                      progreeDialog = true;
+                    });
+                  });
+                }
+                else{
+                  Navigator.of(context).push(PageTransition(child: PaymentsPage(), type: PageTransitionType.downToUp));
+                }
+              });
+
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  _showDialogProgressDialog(){
+    return showDialog(
+      barrierDismissible: false,
+      context: context,
+      builder: (context){
+        return AlertDialog(
+          content: Container(
+            margin: EdgeInsets.all(MediaQuery.of(context).size.width*0.2),
+            child: SpinKitDualRing(color: Colors.green,),
+          ),
+        );
+      }
+    );
+  }
+
+  _showDialogPaypal(){
+    return showDialog(
+      context: context,
+      builder: (context){
+        return CupertinoAlertDialog(
+          title: Text("Sorry"),
+          content: Text("Paypal not ready for now"),
+          actions: <Widget>[
+            CupertinoDialogAction(child: Text("ok"),
+              onPressed: (){
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
 
 
 
@@ -745,3 +1064,229 @@ class ConfirmPageState extends State<ConfirmPage> with TickerProviderStateMixin 
 //
 //      return first;
 //    });
+
+
+
+
+
+
+
+
+
+
+class AddMapOverlay extends ModalRoute<void> {
+  @override
+  Duration get transitionDuration => Duration(milliseconds: 200);
+
+  @override
+  bool get opaque => false;
+
+  @override
+  bool get barrierDismissible => false;
+
+  @override
+  Color get barrierColor => Colors.black.withOpacity(0.5);
+
+  @override
+  String get barrierLabel => null;
+
+  @override
+  bool get maintainState => true;
+
+  @override
+  Widget buildPage(
+      BuildContext context,
+      Animation<double> animation,
+      Animation<double> secondaryAnimation,
+      ) {
+    // This makes sure that text and other content follows the material style
+    return Material(
+      type: MaterialType.transparency,
+      // make sure that the overlay content is not cut off
+      child: SafeArea(
+        child: _buildOverlayContent(context),
+      ),
+    );
+  }
+
+  Widget _buildOverlayContent(BuildContext context) {
+    return Column(
+      children: <Widget>[
+        Expanded(
+          child: Container(),
+        ),
+        Stack(children: <Widget>[Center(child: Container(
+          decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.all(Radius.circular(15.0))),
+          height: 400.0,
+          width: MediaQuery.of(context).size.width * 0.6,
+          margin: EdgeInsets.all(10),
+
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Container(
+                width: MediaQuery.of(context).size.width,
+                height: 60.0,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Expanded(child: Container()),
+                    Container(
+                      child: Text(
+                        'Add new map',
+                        style: TextStyle(color: Colors.white, fontSize: 20.0),
+                      ),
+                      margin: EdgeInsets.only(top: 10.0),
+                    ),
+                    Expanded(child: Container()),
+                    Align(
+                      child: GestureDetector(
+                        child: Container(
+                          margin: EdgeInsets.only(top: 10, right: 10),
+                          decoration: BoxDecoration(
+                              color: Color.fromRGBO(64, 236, 120, 1.0),
+                              borderRadius: BorderRadius.circular(5)),
+                          child: Icon(
+                            Icons.clear,
+                            color: Colors.white,
+                          ),
+                        ),
+                        onTap: () => Navigator.pop(context),
+                      ),
+                      alignment: Alignment.topRight,
+                    ),
+                  ],
+                ),
+                decoration: BoxDecoration(
+//                    color: Colors.green,
+                    borderRadius:
+                    BorderRadius.vertical(top: Radius.circular(15.0))),
+              ),
+              SizedBox(
+                height: 10.0,
+              ),
+              Padding(  padding: EdgeInsets.symmetric(horizontal: 10.0),child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    "VW e-Crafter",
+                    style: TextStyle(
+                        fontSize: 29, color: Color.fromRGBO(38, 39, 41, 1)),
+                  ),
+                  Text(
+                    "Laderaum: 14 m",
+                    style: TextStyle(
+                        fontSize: 16, color: Color.fromRGBO(38, 39, 41, 1)),
+                  ),
+                  SizedBox(
+                    height: 5.0,
+                  ),
+                  Row(
+                    children: <Widget>[
+                      Icon(
+                        Icons.directions_car,
+                        size: 16,
+                      ),
+                      SizedBox(
+                        width: 5.0,
+                      ),
+                      Text(
+                        "4",
+                        style: TextStyle(
+                            fontSize: 16, color: Color.fromRGBO(38, 39, 41, 1)),
+                      ),
+                      SizedBox(
+                        width: 10.0,
+                      ),
+                      Icon(
+                        Icons.person,
+                        size: 16,
+                      ),
+                      SizedBox(
+                        width: 5.0,
+                      ),
+                      Text(
+                        "4",
+                        style: TextStyle(
+                            fontSize: 16, color: Color.fromRGBO(38, 39, 41, 1)),
+                      ),
+                    ],
+                  )],),),
+              SizedBox(
+                height: 193.0,
+              ),
+
+
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 10),
+                width: MediaQuery.of(context).size.width,
+
+                height: 60.0,
+                child: Column(children: <Widget>[Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+
+                    Container(
+                      child: Text(
+                        'Länge: 6,00 m',
+                        style: TextStyle(color: Colors.white, fontSize: 16.0),
+                      ),
+                      margin: EdgeInsets.only(top: 10.0),
+                    ), Container(
+                      child: Text(
+                        'Breite: 1,65 m',
+                        style: TextStyle(color: Colors.white, fontSize: 16.0),
+                      ),
+                      margin: EdgeInsets.only(top: 10.0),
+                    ),
+
+
+                  ],
+                ),Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: <Widget>[
+
+                    Container(
+                      child: Text(
+                        'Höhe: 1,87 m',
+                        style: TextStyle(color: Colors.white, fontSize: 16.0),
+                      ),
+
+                    ),
+
+
+                  ],
+                )],),
+                decoration: BoxDecoration(
+                    color: Color.fromRGBO(64, 236, 120, 1.0),
+                    borderRadius:
+                    BorderRadius.vertical(bottom: Radius.circular(15.0))),
+              ),
+            ],
+          ),
+        ),),
+          Padding(padding:EdgeInsets.only(top: 100) ,child: Image.asset("assets/car.png",height: 300,width: 300,),),
+        ],),
+        Expanded(
+          child: Container(),
+        )
+      ],
+    );
+  }
+
+  @override
+  Widget buildTransitions(BuildContext context, Animation<double> animation,
+      Animation<double> secondaryAnimation, Widget child) {
+    // You can add your own animations for the overlay content
+    return FadeTransition(
+      opacity: animation,
+      child: ScaleTransition(
+        scale: animation,
+        child: child,
+      ),
+    );
+  }
+}

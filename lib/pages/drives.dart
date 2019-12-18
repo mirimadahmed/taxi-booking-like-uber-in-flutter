@@ -1,113 +1,161 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:moover/main.dart';
-import 'package:moover/widgets/listTileDrives.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:intl/intl.dart';
-// This app is a stateful, it tracks the user's current choice.
-class DrivesPage extends StatefulWidget {
 
+import '../main.dart';
+
+class HistoryPage extends StatefulWidget {
   @override
-  _DrivesPageState createState() => _DrivesPageState();
+  _HistoryPageState createState() => _HistoryPageState();
 }
 
-class _DrivesPageState extends State<DrivesPage> with SingleTickerProviderStateMixin{
+class _HistoryPageState extends State<HistoryPage> {
 
-  List<DocumentSnapshot> snapShot;
+  DatabaseReference itemRef;
+  List<DriverOfFinishedRide> items = List();
   @override
   void initState() {
     super.initState();
-    print("FireStore rides");
-    Firestore.instance.collection("rides").reference().where("userId", isEqualTo: currentUserModel.id).getDocuments().then((res){
-      print("userID");
-      setState(() {
-        snapShot = res.documents;
-      });
-    });
+    final FirebaseDatabase database = FirebaseDatabase.instance;
+    print("driver id" + currentUserModel.id);
+    itemRef = database.reference().child('finished');
+
+    itemRef.onChildAdded.listen(_onEntryAdded);
   }
 
+  _onEntryAdded(Event event) {
+    if(event.snapshot.value["userId"] == currentUserModel.id){
+      print(event.snapshot.value["userId"]);
+      setState(() {
+        items.add(DriverOfFinishedRide.fromSnapshot(event.snapshot));
+      });
+    }
+
+  }
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          elevation: 0.0,
-          centerTitle: true,
-          title: Text("Deine Fahrten",style: TextStyle(color: Colors.grey,fontSize: 16.0),),
-//          centerTitle:,
-          backgroundColor: Colors.transparent,
-          leading: IconButton(icon:Icon(Icons.arrow_back_ios,color: Colors.grey,),
-            onPressed:() => Navigator.pop(context, false),
-          ),
+    double w = MediaQuery.of(context).size.width;
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(icon: Icon(Icons.arrow_back_ios, color: Colors.grey,), onPressed: (){
+          Navigator.of(context).pop();
+        }),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0.0,
+        title: Text("History",style: TextStyle(color: Colors.grey),),
+//        shape: Border(bottom: BorderSide(width: 2, color: Colors.green)),
+      ),
+      body: Container(
 
-        ),
-        body:Container (
-          child: Column(
+        child: Column(
             children: <Widget>[
-              Center(child: Text("Verlauf",style: TextStyle(fontSize:12.0,color: Color.fromRGBO(112, 112, 112, 1.0)),),),
-              Padding(padding:EdgeInsets.all(3)),
-              Container(height: 3,color: Color.fromRGBO(32,110,65,1.0),),
-              snapShot == null ? Container(
-                child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.green),),
-              ) : Flexible(
-                child: ListView(
-                  children:List.generate(snapShot.length, (int index){
+              Container( height: 0.5,color: Colors.black,),
+
+              Expanded(child:  ListView(
+                  children: List.generate(items.length, (int index){
                     final f = new DateFormat('yyyy-MM-dd');
-                    String format = f.format(DateTime.fromMillisecondsSinceEpoch(int.parse(snapShot[index].data["timestamp"])));
-                    String format1 = DateFormat().add_jm().format(DateTime.fromMillisecondsSinceEpoch(int.parse(snapShot[index].data["timestamp"])));
-                    return Column(
-                      children: <Widget>[
-                        GestureDetector(
-                        onTap: (){
-                        Navigator.pushNamed(context, "/profile");
-                  },
-                child: CustomListItem(
-                  thumbnail: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
+                    String format = f.format(DateTime.fromMillisecondsSinceEpoch(int.parse(items[index].date)));
+                    String format1 = DateFormat().add_jm().format(DateTime.fromMillisecondsSinceEpoch(int.parse(items[index].date)));
+                    return Container(
+                      width: w,
+                      padding: EdgeInsets.only(left: 20, right: 20, top: 20),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          Text(
-                            "5,55 €",style: TextStyle(color: Color.fromRGBO(32,110,65,1.0)),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: <Widget>[
+                              Text(format.toString() +" " +format1.toString(), style: TextStyle(color: Color.fromRGBO(26, 124, 26, 1.0)),),
+                              Text(items[index].amount + "€", style: TextStyle(color: Color.fromRGBO(26, 124, 26, 1.0)),overflow: TextOverflow.fade,),
+                            ],
                           ),
-                          SizedBox(height: 5,),
-                          Container(
-                              width: 60.00,
-                              height: 60.00,
-//                              margin: EdgeInsets.only(top: 50.0,left: 20),
-                              decoration: new BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                image: new DecorationImage(
-                                  image: ExactAssetImage('assets/profileImage.jpg'),
-                                  fit: BoxFit.fitHeight,
-                                ),
-                              ),
-                              child: Container(child: Image.asset("assets/rating.png"),alignment: Alignment.bottomRight,)
-                          ),
-                          SizedBox(height: 5,),
-                          Text(
-                              snapShot[index].data["rider"].toString() ?? "",style: TextStyle(color: Color.fromRGBO(32,110,65,1.0),
-                          )
-                              ,maxLines: 1,
-                          ),
-
+                          Row(children: <Widget>[
+                            Icon(Icons.location_on, color: Colors.green,),
+                            Text("Location pickup:"),
+                          ],),
+                          Text(items[index].pickup ?? "", style: TextStyle(color: Color.fromRGBO(26, 124, 26, 1.0)),overflow: TextOverflow.fade,),
+                          Row(children: <Widget>[
+                            Icon(Icons.location_off, color: Colors.green,),
+                            Text("Location Destination:"),
+                          ],),
+                          Text(items[index].dest ?? "", style: TextStyle(color: Color.fromRGBO(26, 124, 26, 1.0)),overflow: TextOverflow.fade,),
                         ],
-                  ),
-
-//                  timeTitle: DateTime.fromMillisecondsSinceEpoch(int.parse(snapShot[index].data["timestamp"])).toString(),
-                  timeTitle: format.toString() +" " +format1.toString(),
-                  first: snapShot[index].data["pickup"]["address"].toString() ?? "",
-                  second: snapShot[index].data["destination"]["address"].toString() ?? "",
-                ),
-              ),
-                        Divider()
-                      ],
+                      ),
                     );
-                  }),
-                ),
-              ),
-            ],
-          ),
-        ),
+                  })
+              ))]),
       ),
     );
   }
 }
+
+
+class DriverOfFinishedRide{
+  final String date;
+  final String amount;
+  final String pickup;
+  final String dest;
+  DriverOfFinishedRide(this.date,this.amount,this.dest,this.pickup);
+  DriverOfFinishedRide.fromSnapshot(DataSnapshot snapshot)
+      : date = snapshot.value["timestamp"],
+        amount = snapshot.value["amount"],
+        pickup = snapshot.value["pAdderss"],
+        dest = snapshot.value["dAdderss"];
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//Align(
+//alignment: Alignment.centerRight,
+//child: Column(
+//children: <Widget>[
+//Stack(
+//children: [
+//ClipRRect(
+//borderRadius: BorderRadius.circular(15),
+//child:  FittedBox(
+//fit: BoxFit.fill,
+//child: SizedBox(
+//width: 60,
+//height: 60,
+//child:
+//Image.asset(
+//'assets/profileImage.jpg',
+//),
+//)
+//),
+//),
+//Positioned(
+//right: 0,
+//bottom: 0,
+//child: Container(
+//decoration: BoxDecoration(
+//borderRadius: BorderRadius.only(topLeft: Radius.circular(10), bottomRight: Radius.circular(15)),
+//color: Color.fromRGBO(64, 236, 120, 1.0),),
+//width: 23,
+//height: 23,
+//child: Center(
+//child: Text("49", style: TextStyle(color: Colors.white)),
+//),
+//),
+//)
+//],
+//),
+//Text("Alex",style: TextStyle(color: Color.fromRGBO(26, 124, 26, 1.0), fontWeight: FontWeight.bold),),
+//],
+//),
+//),
+

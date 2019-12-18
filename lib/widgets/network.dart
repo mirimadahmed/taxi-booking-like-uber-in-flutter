@@ -34,15 +34,17 @@ class NetworkUtil {
 
       List<Steps> steps;
       var distance;
+      var duration;
       try {
         distance = _decoder.convert(res)["routes"][0]["legs"][0]["distance"]["text"];
+        duration = _decoder.convert(res)["routes"][0]["legs"][0]["duration"]["text"];
         steps =
             parseSteps(_decoder.convert(res)["routes"][0]["legs"][0]["steps"]);
       } catch (e) {
         return e;
       }
       print("distance");
-      return {"distance": distance, "steps":steps};
+      return {"distance": distance, "steps":steps, "duration" : duration};
     });
   }
 

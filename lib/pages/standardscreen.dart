@@ -61,7 +61,7 @@ class StandardScreenPageState extends State<StandardScreenPage> {
   bool _ploylineMap = false;
   bool _goingToPolyLineMap = false;
   bool add = false;
-  double amount = 22.34;
+  int amount = 12;
   TextEditingController _controllerNote;
   getUserLocation() async {
     //call this async method from wherever you need
@@ -379,7 +379,7 @@ class StandardScreenPageState extends State<StandardScreenPage> {
                                 onPressed: add ? null :() {
                                   setState(() {
                                     add = true;
-                                    amount = amount + 5.0;
+                                    amount = amount + 5;
                                   });
                                 },
                                 child: Text(
@@ -397,7 +397,7 @@ class StandardScreenPageState extends State<StandardScreenPage> {
                                 shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10)),
                                 onPressed: () {
-                                  if(amount > 12.34){
+                                  if(amount > 12){
                                     setState(() {
                                       add = false;
                                       amount = amount - 5;

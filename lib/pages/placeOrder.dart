@@ -131,7 +131,8 @@ class PlaceOrderPageState extends State<PlaceOrderPage> {
                     padding: EdgeInsets.all(10),
 //                    height: 30,
                     width: MediaQuery.of(context).size.width,
-                    child: Column(
+                    child:
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Center(
